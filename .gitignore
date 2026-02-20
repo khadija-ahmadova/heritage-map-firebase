@@ -1,0 +1,18 @@
+# Dependencies
+web/node_modules/
+mobile/node_modules/
+
+# Environment files — never commit real values
+web/.env
+mobile/.env
+
+# Build output
+web/dist/
+
+# Expo / React Native
+mobile/.expo/
+mobile/android/
+mobile/ios/
+
+# macOS
+.DS_Store
