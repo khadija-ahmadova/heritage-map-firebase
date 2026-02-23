@@ -1,8 +1,7 @@
 import { initializeApp } from 'firebase/app'
-import { initializeAuth, getReactNativePersistence } from 'firebase/auth'
+import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 
 // These values come from your Firebase Console project settings.
 // Copy .env.example to .env and fill in the values before running.
@@ -15,12 +14,9 @@ const firebaseConfig = {
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 }
 
+
 const app = initializeApp(firebaseConfig)
 
-// initializeAuth + getReactNativePersistence is required in React Native.
-// Using getAuth() instead causes auth state to be lost on app restart.
-export const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage),
-})
+export const auth = getAuth(app)
 export const db = getFirestore(app)
 export const storage = getStorage(app)
