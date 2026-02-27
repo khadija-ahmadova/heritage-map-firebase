@@ -26,6 +26,7 @@ export default function LoginScreen({ navigation }: any) {
     setLoading(true)
     try {
       await signInWithEmailAndPassword(auth, email, password)
+      navigation.navigate('Opening')
     } catch (error: any) {
       Alert.alert('Login Failed', error.message)
     } finally {
@@ -183,7 +184,7 @@ const styles = StyleSheet.create({
   signupRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 100,
+    marginTop: 80,
     alignSelf: 'center',
   },
   signupText: {
