@@ -37,6 +37,7 @@ export default function SignupScreen({ navigation }: any) {
     setLoading(true)
     try {
         await createUserWithEmailAndPassword(auth, email, password)
+        navigation.navigate('Opening')
     } catch (error: any) {
         Alert.alert('Sign up Failed', error.message)
     } finally {
