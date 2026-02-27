@@ -1,1 +1,9 @@
 @import "tailwindcss";
+
+@theme{
+    --color-bg-seashell: #fff3ecff;
+    --color-bg-caramel: #e8a876ff;
+    --color-accent-brown: #934706ff;
+    --color-accent-bordeaux: #52050aff;
+    --color-active-button: #2f88ffff;
+}

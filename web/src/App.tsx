@@ -1,9 +1,19 @@
+import './index.css'
+import {Route, Routes } from 'react-router-dom';
+import LandingPage from './pages/LandingPage.tsx';
+import Header from './components/Header.tsx';
+
+
 function App() {
   return (
-    <div className="min-h-screen bg-white">
-      <h1 className="text-2xl font-bold p-4">Heritage Maps</h1>
-    </div>
-  )
-}
+    <>
+    <Header/>
+      <Routes>
+        <Route path='/' element={<LandingPage />}>
+        </Route>
+      </Routes>
+    </>
+  );
+};
 
 export default App
