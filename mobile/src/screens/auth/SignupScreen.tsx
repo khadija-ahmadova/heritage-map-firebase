@@ -134,7 +134,7 @@ export default function SignupScreen({ navigation }: any) {
       <View style={styles.loginRow}>
         <Text style={styles.loginText}>Already have an account? </Text>
         <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-          <Text style={styles.signupLink}>Log in</Text>
+          <Text style={styles.loginLink}>Log in</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -222,13 +222,13 @@ const styles = StyleSheet.create({
   loginRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 120,
+    marginTop: 80,
   },
   loginText: {
     color: '#888',
     fontSize: 14,
   },
-  signupLink: {
+  loginLink: {
     color: '#2F88FF',
     fontWeight: '700',
     fontSize: 14,
