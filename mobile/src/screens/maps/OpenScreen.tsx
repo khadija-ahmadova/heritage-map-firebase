@@ -1,8 +1,37 @@
 import React, { useState } from 'react'
-import { View, StyleSheet, Modal, Text, TouchableOpacity } from 'react-native'
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native'
 import { SearchBar, Avatar } from 'react-native-elements'
-import MapView, { UrlTile } from 'react-native-maps'
 import { Ionicons } from '@expo/vector-icons'
+import { WebView } from 'react-native-webview'
+
+const leafletHTML = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body, #map { width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script>
+    var map = L.map('map', {
+      zoomControl: false,
+      attributionControl: true
+    }).setView([40.4093, 49.8671], 13);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+  </script>
+</body>
+</html>
+`
 
 export default function OpenScreen({ navigation }: any) {
   const [search, setSearch] = useState('');
@@ -10,22 +39,14 @@ export default function OpenScreen({ navigation }: any) {
   return (
     <View style={styles.container}>
 
-      {/* Map fills the entire background */}
-      <MapView
+      {/* Leaflet map in WebView fills entire background */}
+      <WebView
         style={styles.map}
-        initialRegion={{
-          latitude: 40.4093,
-          longitude: 49.8671,
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421,
-        }}
-      >
-        <UrlTile
-          urlTemplate="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          maximumZ={19}
-          flipY={false}
-        />
-      </MapView>
+        source={{ html: leafletHTML }}
+        scrollEnabled={false}
+        originWhitelist={['*']}
+        javaScriptEnabled={true}
+      />
 
       {/* Search bar + Avatar */}
       <View style={styles.searchContainer}>
@@ -42,14 +63,14 @@ export default function OpenScreen({ navigation }: any) {
           />
         </TouchableOpacity>
         <SearchBar
-        placeholder="Search location..."
-        onChangeText={(text) => setSearch(text)}
-        value={search}
-        containerStyle={styles.searchBarContainer}
-        inputContainerStyle={styles.searchBarInput}
-        round
-        platform="default"
-      />
+          placeholder="Search location..."
+          onChangeText={(text) => setSearch(text)}
+          value={search}
+          containerStyle={styles.searchBarContainer}
+          inputContainerStyle={styles.searchBarInput}
+          round
+          platform="default"
+        />
       </View>
 
       {/* Bottom panel */}
@@ -59,7 +80,7 @@ export default function OpenScreen({ navigation }: any) {
           <Text style={styles.tabText}>Explore</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style = {styles.tabItem} onPress={() => navigation.navigate('Saved')}>
+        <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Saved')}>
           <Ionicons name="bookmark-outline" color="white" size={24} />
           <Text style={styles.tabText}>Saved</Text>
         </TouchableOpacity>
@@ -74,7 +95,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   map: {
-    ...StyleSheet.absoluteFillObject,  // fills entire screen behind everything
+    ...StyleSheet.absoluteFillObject,
   },
   searchContainer: {
     position: 'absolute',
