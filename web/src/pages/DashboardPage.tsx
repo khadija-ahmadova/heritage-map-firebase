@@ -2,7 +2,7 @@
 //
 // Needs to be replace this with map and landmark markers
 
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 import { signOut } from '../lib/auth'
 import { useNavigate } from 'react-router-dom'
 

@@ -12,7 +12,8 @@
 
 import './index.css'
 import { Route, Routes, Navigate } from 'react-router-dom'
-import { AuthProvider, useAuth } from './context/AuthContext'
+import { AuthProvider } from './context/AuthProvider'
+import { useAuth } from './context/useAuth'
 import Layout from './layout/Layout'
 import LandingPage from './pages/LandingPage'
 import SignInPage from './pages/SignInPage'
