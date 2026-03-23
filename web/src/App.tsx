@@ -1,19 +1,78 @@
-import './index.css'
-import {Route, Routes } from 'react-router-dom';
-import LandingPage from './pages/LandingPage.tsx';
-import Header from './components/Header.tsx';
+// App.tsx — Root of the web application
+//
+// Two responsibilities:
+//   1. Wrap the entire app in <AuthProvider> so every component can call useAuth()
+//   2. Declare all client-side routes (URL → component mappings)
+//
+// Route structure:
+//   /              → LandingPage (public)
+//   /signin        → SignInPage (public; redirect to /dashboard if already logged in)
+//   /register      → RegisterPage (public)
+//   /dashboard     → DashboardPage (protected — requires login)
 
+import './index.css'
+import { Route, Routes, Navigate } from 'react-router-dom'
+import { AuthProvider } from './context/AuthProvider'
+import { useAuth } from './context/useAuth'
+import Layout from './layout/Layout'
+import LandingPage from './pages/LandingPage'
+import SignInPage from './pages/SignInPage'
+import RegisterPage from './pages/RegisterPage'
+import DashboardPage from './pages/DashboardPage'
+import ProtectedRoute from './components/ProtectedRoute'
+
+// PublicOnlyRoute — the mirror of ProtectedRoute.
+// If the user is already logged in, redirect them away from /signin and /register
+function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuth()
+  if (loading) return null
+  if (user) return <Navigate to="/dashboard" replace />
+  return <>{children}</>
+}
 
 function App() {
   return (
-    <>
-    <Header/>
+    // AuthProvider must be an ancestor of everything that calls useAuth()
+    <AuthProvider>
       <Routes>
-        <Route path='/' element={<LandingPage />}>
+        {/* Pages that use the shared Header + Footer shell */}
+        <Route element={<Layout />}>
+          <Route path="/" element={<LandingPage />} />
         </Route>
+
+        {/* Auth pages — full-screen, no Header/Footer */}
+        <Route
+          path="/signin"
+          element={
+            <PublicOnlyRoute>
+              <SignInPage />
+            </PublicOnlyRoute>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <PublicOnlyRoute>
+              <RegisterPage />
+            </PublicOnlyRoute>
+          }
+        />
+
+        {/* Protected pages — require login */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Catch-all — any unknown URL redirects to home */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-    </>
-  );
-};
+    </AuthProvider>
+  )
+}
 
 export default App
