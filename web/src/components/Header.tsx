@@ -34,7 +34,7 @@ const Header = () => {
 
   return (
     <header
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300
+      className={`fixed top-0 left-0 w-full z-1000 transition-all duration-300
       ${scrolled ? "bg-accent-bordeaux shadow-md py-3" : "bg-transparent py-5"}`}
     >
       <div className="max-w-screen-xl mx-auto flex justify-between items-center px-6">
