@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
-import { View, StyleSheet, Text, TouchableOpacity } from 'react-native'
-import { SearchBar, Avatar } from 'react-native-elements'
+import React, { useState, useRef } from 'react'
+import { View, StyleSheet, Text, TouchableOpacity, TextInput } from 'react-native'
+import { Avatar } from 'react-native-elements'
 import { Ionicons } from '@expo/vector-icons'
 import { WebView } from 'react-native-webview'
 
@@ -28,6 +28,40 @@ const leafletHTML = `
       maxZoom: 19,
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
+
+    var currentMarker = null;
+
+    // Listen for messages from React Native
+    document.addEventListener('message', function(event) {
+      handleMessage(event.data);
+    });
+    window.addEventListener('message', function(event) {
+      handleMessage(event.data);
+    });
+
+    function handleMessage(data) {
+      try {
+        var msg = JSON.parse(data);
+        if (msg.type === 'FLY_TO') {
+          var lat = msg.lat;
+          var lon = msg.lon;
+          var label = msg.label;
+
+          // Remove old marker if exists
+          if (currentMarker) {
+            map.removeLayer(currentMarker);
+          }
+
+          // Add new marker and fly to location
+          currentMarker = L.marker([lat, lon])
+            .addTo(map)
+            .bindPopup(label)
+            .openPopup();
+
+          map.flyTo([lat, lon], 15, { duration: 1.5 });
+        }
+      } catch(e) {}
+    }
   </script>
 </body>
 </html>
@@ -35,12 +69,56 @@ const leafletHTML = `
 
 export default function OpenScreen({ navigation }: any) {
   const [search, setSearch] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
+  const [error, setError] = useState('');
+  const webviewRef = useRef<WebView>(null);
+
+  const handleSearch = async () => {
+    if (!search.trim()) return;
+
+    setIsSearching(true);
+    setError('');
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(search)}&format=json&limit=1`,
+        {
+          headers: {
+            'User-Agent': 'MyDiplomaApp/1.0'
+          }
+        }
+      );
+
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        const { lat, lon, display_name } = data[0];
+
+        // Send coordinates to the Leaflet map inside WebView
+        webviewRef.current?.injectJavaScript(`
+          handleMessage(JSON.stringify({
+            type: 'FLY_TO',
+            lat: ${parseFloat(lat)},
+            lon: ${parseFloat(lon)},
+            label: ${JSON.stringify(display_name)}
+          }));
+          true;
+        `);
+      } else {
+        setError('Location not found. Try a different search.');
+      }
+    } catch (e) {
+      setError('Search failed. Check your connection.');
+    } finally {
+      setIsSearching(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
 
-      {/* Leaflet map in WebView fills entire background */}
       <WebView
+        ref={webviewRef}
         style={styles.map}
         source={{ html: leafletHTML }}
         scrollEnabled={false}
@@ -62,16 +140,36 @@ export default function OpenScreen({ navigation }: any) {
             containerStyle={styles.avatar}
           />
         </TouchableOpacity>
-        <SearchBar
-          placeholder="Search location..."
-          onChangeText={(text) => setSearch(text)}
-          value={search}
-          containerStyle={styles.searchBarContainer}
-          inputContainerStyle={styles.searchBarInput}
-          round
-          platform="default"
-        />
+
+        <View style={styles.searchBarWrapper}>
+          <TextInput
+            placeholder="Search location..."
+            onChangeText={(text) => {
+              setSearch(text);
+              setError('');
+            }}
+            value={search}
+            style={styles.searchInput}
+            placeholderTextColor="#999"
+            returnKeyType="search"
+            onSubmitEditing={handleSearch}
+          />
+          <TouchableOpacity onPress={handleSearch} disabled={isSearching}>
+            <Ionicons
+              name={isSearching ? 'hourglass-outline' : 'search-outline'}
+              size={20}
+              color="#6E3606"
+            />
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {/* Error message */}
+      {error ? (
+        <View style={styles.errorBox}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : null}
 
       {/* Bottom panel */}
       <View style={styles.bottomPanel}>
@@ -112,16 +210,41 @@ const styles = StyleSheet.create({
     width: 45,
     height: 45,
   },
-  searchBarContainer: {
+  searchBarWrapper: {
     flex: 1,
-    backgroundColor: 'transparent',
-    borderTopWidth: 0,
-    borderBottomWidth: 0,
-    padding: 0,
-  },
-  searchBarInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: 'white',
+    borderRadius: 25,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 15,
+    color: '#333',
+    padding: 0,
+    marginRight: 8,
+  },
+  errorBox: {
+    position: 'absolute',
+    top: 110,
+    left: 16,
+    right: 16,
+    backgroundColor: 'rgba(220,53,69,0.9)',
     borderRadius: 10,
+    padding: 10,
+    zIndex: 1,
+  },
+  errorText: {
+    color: 'white',
+    textAlign: 'center',
+    fontSize: 13,
   },
   bottomPanel: {
     position: 'absolute',
