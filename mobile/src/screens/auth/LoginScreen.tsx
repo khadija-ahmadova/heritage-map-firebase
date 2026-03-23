@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  ScrollView,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { signInWithEmailAndPassword } from 'firebase/auth'
@@ -35,7 +36,7 @@ export default function LoginScreen({ navigation }: any) {
   }
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       {/* Logo */}
       <View style={styles.logoRow}>
         <Ionicons name="star" size={32} color="#7B3A10" />
@@ -103,7 +104,7 @@ export default function LoginScreen({ navigation }: any) {
           <Text style={styles.signupLink}>Sign up</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </ScrollView>
   )
 }
 
@@ -111,8 +112,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
+  },
+  content: {
     paddingHorizontal: 28,
     paddingTop: 80,
+    paddingBottom: 40,
   },
   logoRow: {
     flexDirection: 'row',
@@ -179,12 +183,11 @@ const styles = StyleSheet.create({
     color: '#1a1a1a',
     fontWeight: '600',
     fontSize: 14,
-    marginBottom: 115,
+    marginBottom: 24,
   },
   signupRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 80,
     alignSelf: 'center',
   },
   signupText: {
