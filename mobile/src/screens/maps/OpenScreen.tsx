@@ -1,130 +1,95 @@
 import React, { useState, useRef } from 'react'
-import { View, StyleSheet, Text, TouchableOpacity, TextInput } from 'react-native'
+import {
+  View,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+  ActivityIndicator,
+} from 'react-native'
+import MapView, { Marker } from 'react-native-maps'
 import { Avatar } from 'react-native-elements'
 import { Ionicons } from '@expo/vector-icons'
-import { WebView } from 'react-native-webview'
+import { useMonuments } from '../../hooks/useMonuments'
+import type { Monument } from '../../hooks/useMonuments'
+import MonumentDetailSheet from '../../components/MonumentDetailSheet'
 
-const leafletHTML = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    html, body, #map { width: 100%; height: 100%; }
-  </style>
-</head>
-<body>
-  <div id="map"></div>
-  <script>
-    var map = L.map('map', {
-      zoomControl: false,
-      attributionControl: true
-    }).setView([40.4093, 49.8671], 13);
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    var currentMarker = null;
-
-    // Listen for messages from React Native
-    document.addEventListener('message', function(event) {
-      handleMessage(event.data);
-    });
-    window.addEventListener('message', function(event) {
-      handleMessage(event.data);
-    });
-
-    function handleMessage(data) {
-      try {
-        var msg = JSON.parse(data);
-        if (msg.type === 'FLY_TO') {
-          var lat = msg.lat;
-          var lon = msg.lon;
-          var label = msg.label;
-
-          // Remove old marker if exists
-          if (currentMarker) {
-            map.removeLayer(currentMarker);
-          }
-
-          // Add new marker and fly to location
-          currentMarker = L.marker([lat, lon])
-            .addTo(map)
-            .bindPopup(label)
-            .openPopup();
-
-          map.flyTo([lat, lon], 15, { duration: 1.5 });
-        }
-      } catch(e) {}
-    }
-  </script>
-</body>
-</html>
-`
+const BAKU_REGION = {
+  latitude: 40.4093,
+  longitude: 49.8671,
+  latitudeDelta: 0.05,
+  longitudeDelta: 0.05,
+}
 
 export default function OpenScreen({ navigation }: any) {
-  const [search, setSearch] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [error, setError] = useState('');
-  const webviewRef = useRef<WebView>(null);
+  const [search, setSearch] = useState('')
+  const [isSearching, setIsSearching] = useState(false)
+  const [searchError, setSearchError] = useState('')
+  const [selected, setSelected] = useState<Monument | null>(null)
+
+  const mapRef = useRef<MapView>(null)
+  const { monuments, loading, error } = useMonuments()
+
+  if (error) {
+    Alert.alert('Map error', 'Could not load landmarks. Check your connection and try again.')
+  }
 
   const handleSearch = async () => {
-    if (!search.trim()) return;
+    if (!search.trim()) return
 
-    setIsSearching(true);
-    setError('');
+    setIsSearching(true)
+    setSearchError('')
 
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(search)}&format=json&limit=1`,
-        {
-          headers: {
-            'User-Agent': 'MyDiplomaApp/1.0'
-          }
-        }
-      );
-
-      const data = await response.json();
+        { headers: { 'User-Agent': 'HeritageMapApp/1.0' } }
+      )
+      const data = await response.json()
 
       if (data && data.length > 0) {
-        const { lat, lon, display_name } = data[0];
-
-        // Send coordinates to the Leaflet map inside WebView
-        webviewRef.current?.injectJavaScript(`
-          handleMessage(JSON.stringify({
-            type: 'FLY_TO',
-            lat: ${parseFloat(lat)},
-            lon: ${parseFloat(lon)},
-            label: ${JSON.stringify(display_name)}
-          }));
-          true;
-        `);
+        const { lat, lon } = data[0]
+        mapRef.current?.animateToRegion({
+          latitude: parseFloat(lat),
+          longitude: parseFloat(lon),
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        })
       } else {
-        setError('Location not found. Try a different search.');
+        setSearchError('Location not found. Try a different search.')
       }
-    } catch (e) {
-      setError('Search failed. Check your connection.');
+    } catch {
+      setSearchError('Search failed. Check your connection.')
     } finally {
-      setIsSearching(false);
+      setIsSearching(false)
     }
-  };
+  }
 
   return (
     <View style={styles.container}>
 
-      <WebView
-        ref={webviewRef}
-        style={styles.map}
-        source={{ html: leafletHTML }}
-        scrollEnabled={false}
-        originWhitelist={['*']}
-        javaScriptEnabled={true}
-      />
+      <MapView
+        ref={mapRef}
+        style={StyleSheet.absoluteFill}
+        mapType="standard"
+        initialRegion={BAKU_REGION}
+      >
+        {monuments.map((m) => (
+          <Marker
+            key={m.id}
+            coordinate={m.coordinates}
+            onPress={() => setSelected(m)}
+          />
+        ))}
+      </MapView>
+
+      {/* Loading spinner while fetching monuments */}
+      {loading && (
+        <View style={styles.loadingOverlay} pointerEvents="none">
+          <ActivityIndicator size="large" color="#6E3606" />
+        </View>
+      )}
 
       {/* Search bar + Avatar */}
       <View style={styles.searchContainer}>
@@ -145,8 +110,8 @@ export default function OpenScreen({ navigation }: any) {
           <TextInput
             placeholder="Search location..."
             onChangeText={(text) => {
-              setSearch(text);
-              setError('');
+              setSearch(text)
+              setSearchError('')
             }}
             value={search}
             style={styles.searchInput}
@@ -164,25 +129,30 @@ export default function OpenScreen({ navigation }: any) {
         </View>
       </View>
 
-      {/* Error message */}
-      {error ? (
+      {/* Search error message */}
+      {searchError ? (
         <View style={styles.errorBox}>
-          <Text style={styles.errorText}>{error}</Text>
+          <Text style={styles.errorText}>{searchError}</Text>
         </View>
       ) : null}
 
-      {/* Bottom panel */}
-      <View style={styles.bottomPanel}>
-        <TouchableOpacity style={styles.tabItem}>
-          <Ionicons name="location-outline" color="white" size={24} />
-          <Text style={styles.tabText}>Explore</Text>
-        </TouchableOpacity>
+      {/* Bottom navigation panel — hidden when a monument sheet is open */}
+      {!selected && (
+        <View style={styles.bottomPanel}>
+          <TouchableOpacity style={styles.tabItem}>
+            <Ionicons name="location-outline" color="white" size={24} />
+            <Text style={styles.tabText}>Explore</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Saved')}>
-          <Ionicons name="bookmark-outline" color="white" size={24} />
-          <Text style={styles.tabText}>Saved</Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Saved')}>
+            <Ionicons name="bookmark-outline" color="white" size={24} />
+            <Text style={styles.tabText}>Saved</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Monument detail sheet */}
+      <MonumentDetailSheet monument={selected} onClose={() => setSelected(null)} />
 
     </View>
   )
@@ -192,8 +162,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  map: {
+  loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.4)',
   },
   searchContainer: {
     position: 'absolute',
@@ -266,5 +239,5 @@ const styles = StyleSheet.create({
   tabText: {
     color: 'white',
     fontSize: 12,
-  }
+  },
 })
