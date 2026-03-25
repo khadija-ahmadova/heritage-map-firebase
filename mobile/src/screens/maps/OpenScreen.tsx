@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useMonuments } from '../../hooks/useMonuments'
 import type { Monument } from '../../hooks/useMonuments'
 import MonumentDetailSheet from '../../components/MonumentDetailSheet'
+import SavedSheet from '../../components/SavedSheet'
 
 const BAKU_REGION = {
   latitude: 40.4093,
@@ -27,6 +28,7 @@ export default function OpenScreen({ navigation }: any) {
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState('')
   const [selected, setSelected] = useState<Monument | null>(null)
+  const [savedOpen, setSavedOpen] = useState(false)
 
   const mapRef = useRef<MapView>(null)
   const { monuments, loading, error } = useMonuments()
@@ -79,7 +81,10 @@ export default function OpenScreen({ navigation }: any) {
           <Marker
             key={m.id}
             coordinate={m.coordinates}
-            onPress={() => setSelected(m)}
+            onPress={() => {
+              setSavedOpen(false)
+              setSelected(m)
+            }}
           />
         ))}
       </MapView>
@@ -136,15 +141,15 @@ export default function OpenScreen({ navigation }: any) {
         </View>
       ) : null}
 
-      {/* Bottom navigation panel — hidden when a monument sheet is open */}
-      {!selected && (
+      {/* Bottom navigation panel — hidden when any sheet is open */}
+      {!selected && !savedOpen && (
         <View style={styles.bottomPanel}>
           <TouchableOpacity style={styles.tabItem}>
             <Ionicons name="location-outline" color="white" size={24} />
             <Text style={styles.tabText}>Explore</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.tabItem} onPress={() => navigation.navigate('Saved')}>
+          <TouchableOpacity style={styles.tabItem} onPress={() => setSavedOpen(true)}>
             <Ionicons name="bookmark-outline" color="white" size={24} />
             <Text style={styles.tabText}>Saved</Text>
           </TouchableOpacity>
@@ -153,6 +158,9 @@ export default function OpenScreen({ navigation }: any) {
 
       {/* Monument detail sheet */}
       <MonumentDetailSheet monument={selected} onClose={() => setSelected(null)} />
+
+      {/* Saved sheet */}
+      <SavedSheet visible={savedOpen} onClose={() => setSavedOpen(false)} />
 
     </View>
   )

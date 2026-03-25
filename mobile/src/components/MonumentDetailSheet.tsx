@@ -2,6 +2,8 @@ import React, { useEffect, useRef } from 'react'
 import {
   Animated,
   Dimensions,
+  PanResponder,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -18,9 +20,31 @@ interface Props {
 
 const SCREEN_HEIGHT = Dimensions.get('window').height
 const SHEET_HEIGHT = SCREEN_HEIGHT * 0.62
+const DISMISS_THRESHOLD = 80
 
 export default function MonumentDetailSheet({ monument, onClose }: Props) {
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current
+  const scrollOffset = useRef(0)
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, g) => g.dy > 0 && scrollOffset.current <= 0,
+      onPanResponderMove: (_, g) => {
+        if (g.dy > 0) translateY.setValue(g.dy)
+      },
+      onPanResponderRelease: (_, g) => {
+        if (g.dy > DISMISS_THRESHOLD) {
+          Animated.timing(translateY, {
+            toValue: SHEET_HEIGHT,
+            duration: 250,
+            useNativeDriver: true,
+          }).start(onClose)
+        } else {
+          Animated.spring(translateY, { toValue: 0, useNativeDriver: true }).start()
+        }
+      },
+    })
+  ).current
 
   useEffect(() => {
     if (monument) {
@@ -44,7 +68,7 @@ export default function MonumentDetailSheet({ monument, onClose }: Props) {
     monument.period ? `Period: ${monument.period}` : null,
     monument.architect ? `Architect: ${monument.architect}` : null,
     monument.location ? `Location: ${monument.location}` : null,
-    monument.description || null,
+    monument.description ? `Description: ${monument.description}` : null,
   ]
     .filter(Boolean)
     .join('\n\n')
@@ -54,40 +78,52 @@ export default function MonumentDetailSheet({ monument, onClose }: Props) {
       <Animated.View
         style={[styles.sheet, { transform: [{ translateY }] }]}
         accessibilityViewIsModal
+        {...panResponder.panHandlers}
       >
-        {/* Drag handle — tap to close */}
-        <TouchableOpacity onPress={onClose} style={styles.dragHandleArea} accessibilityLabel="Close">
+        {/* Drag handle */}
+        <View style={styles.dragHandleArea}>
           <View style={styles.dragHandle} />
-        </TouchableOpacity>
-
-        {/* Image placeholder */}
-        <View style={styles.imagePlaceholder} />
-
-        {/* Title */}
-        <Text style={styles.title}>{monument.name}</Text>
-
-        {/* Action buttons */}
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.actionButton} accessibilityLabel="Save monument">
-            <Ionicons name="bookmark-outline" size={22} color="#6E3606" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} accessibilityLabel="Navigate to monument">
-            <Ionicons name="navigate-circle-outline" size={22} color="#6E3606" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} accessibilityLabel="Share monument">
-            <Ionicons name="share-social-outline" size={22} color="#6E3606" />
-          </TouchableOpacity>
         </View>
 
-        {/* Details + description box */}
-        <View style={styles.detailsBox}>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.detailsScroll}>
+        <ScrollView
+          bounces={Platform.OS === 'ios'}
+          scrollEventThrottle={16}
+          onScroll={(e) => {
+            scrollOffset.current = e.nativeEvent.contentOffset.y
+            if (Platform.OS === 'ios' && e.nativeEvent.contentOffset.y < -60) {
+              onClose()
+            }
+          }}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          {/* Image placeholder */}
+          <View style={styles.imagePlaceholder} />
+
+          {/* Title */}
+          <Text style={styles.title}>{monument.name}</Text>
+
+          {/* Action buttons */}
+          <View style={styles.actionRow}>
+            <TouchableOpacity style={styles.actionButton} accessibilityLabel="Save monument">
+              <Ionicons name="bookmark-outline" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton} accessibilityLabel="Navigate to monument">
+              <Ionicons name="navigate-circle-outline" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton} accessibilityLabel="Share monument">
+              <Ionicons name="share-social-outline" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Details + description box */}
+          <View style={styles.detailsBox}>
             <Text style={styles.detailsText}>{detailText}</Text>
-          </ScrollView>
-          <TouchableOpacity style={styles.arrowButton} accessibilityLabel="More info">
-            <Ionicons name="arrow-forward" size={18} color="white" />
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity style={styles.arrowButton} accessibilityLabel="More info">
+              <Ionicons name="arrow-forward" size={18} color="white" />
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
       </Animated.View>
     </View>
   )
@@ -100,10 +136,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: SHEET_HEIGHT,
-    backgroundColor: '#FEF0E8',
+    backgroundColor: '#FFF3EC',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    paddingHorizontal: 16,
     paddingBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -3 },
@@ -118,8 +153,12 @@ const styles = StyleSheet.create({
   dragHandle: {
     width: 40,
     height: 4,
-    backgroundColor: '#C4A090',
+    backgroundColor: '#3D3C3C',
     borderRadius: 2,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
   },
   imagePlaceholder: {
     height: 150,
@@ -135,25 +174,22 @@ const styles = StyleSheet.create({
   },
   actionRow: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 100,
     marginBottom: 14,
   },
   actionButton: {
     width: 50,
     height: 50,
-    backgroundColor: '#F5C4A9',
+    backgroundColor: '#E8A876',
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
   detailsBox: {
-    flex: 1,
-    backgroundColor: '#FDE4D0',
+    backgroundColor: '#FFE2D2',
     borderRadius: 12,
     padding: 14,
-  },
-  detailsScroll: {
-    paddingBottom: 44,
+    paddingBottom: 52,
   },
   detailsText: {
     fontSize: 13,
@@ -166,7 +202,7 @@ const styles = StyleSheet.create({
     right: 12,
     width: 36,
     height: 36,
-    backgroundColor: '#6E3606',
+    backgroundColor: '#E8A876',
     borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
