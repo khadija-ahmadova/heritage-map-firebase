@@ -93,7 +93,7 @@ const LandingPage = () => {
 
                     <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
                         <Link
-                            to="/search-by-architects"
+                            to="/search-by-architect"
                             className="group relative h-64 rounded-xl overflow-hidden"
                         >
                             {/* Background Image*/}

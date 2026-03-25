@@ -19,6 +19,9 @@ import LandingPage from './pages/LandingPage'
 import SignInPage from './pages/SignInPage'
 import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
+import SearchByArcitectPage from './pages/ArchitectSearchPage'
+import SearchbyEraPage from './pages/EraSearchPage'
+import SearchByAreaPage from './pages/AreaSearchPage'
 import ProtectedRoute from './components/ProtectedRoute'
 
 // PublicOnlyRoute — the mirror of ProtectedRoute.
@@ -67,6 +70,36 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        {/* Search Filters */}
+        <Route
+          path="/search-by-architect"
+          element={
+            <PublicOnlyRoute>
+              <SearchByArcitectPage />
+            </PublicOnlyRoute>
+          }
+        />
+
+        <Route
+          path="/search-by-era"
+          element={
+            <PublicOnlyRoute>
+              <SearchbyEraPage/>
+            </PublicOnlyRoute>
+          }
+        />
+
+        
+        <Route
+          path="/search-by-area"
+          element={
+            <PublicOnlyRoute>
+              <SearchByAreaPage/>
+            </PublicOnlyRoute>
+          }
+        />
+
 
         {/* Catch-all — any unknown URL redirects to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
