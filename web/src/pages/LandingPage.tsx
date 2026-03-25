@@ -159,9 +159,9 @@ const LandingPage = () => {
 
                     {/*OpenStreetMap tiles*/}
                     <section className="py-24 bg-bg-seashell">
-                        <div className="max-w-6xl mx-auto px-6">
+                        <div className="h-[500px] w-full">
 
-                            <Mapview/>
+                            <Mapview selectedFilter={null} filterField={"architect"}/>
 
                         </div>
                     </section>

@@ -1,20 +1,84 @@
+/**
+ * SplitMapLayout Component
+ *
+ * Reusable page layout for all search-based pages (architect, era, area).
+ *
+ * Responsibilities:
+ * - Provide a consistent two-column layout:
+ *      LEFT: Filter panel (search + selectable filters)
+ *      RIGHT: Interactive map
+ * - Manage shared state between filters and map
+ * - Pass selected filter values down to MapView
+ *
+ * Layout Structure:
+ *
+ * SplitMapLayout
+ *   ├ LeftPanelHeader (search input + profile access)
+ *   ├ FilterCard list (dynamic filter values)
+ *   └ MapView (filtered monuments)
+ *
+ * State Management:
+ *
+ * selectedFilter (string | null)
+ *   → updated when user selects a filter
+ *   → passed to MapView
+ *
+ * filterField ("architect" | "period" | "location")
+ *   → defines which Firestore field to query
+ *
+ * Data Flow:
+ *
+ * User clicks filter
+ *   ↓
+ * selectedFilter updated
+ *   ↓
+ * MapView triggers Firestore query
+ *   ↓
+ * Filtered monuments displayed on map
+ *
+ * Notes:
+ * - Fully reusable across different search pages
+ * - Only filterField changes per page
+ * - Does NOT fetch data itself (delegates to MapView)
+ */
+
+import { useState } from "react";
 import Mapview from "../map/MapView";
+import LeftPanelHeader from "./LeftPanelHeader";
 
 interface Props {
-    children: React.ReactNode;
+    children: (props:{
+        selectedFilter: string | null;
+        setSelectedFilter: (value: string | null) => void;
+    }) => React.ReactNode;
+
+    filteredField: "architect" | "period" | "location";
 }
 
-const SplitMapLayout = ({ children}: Props) => {
+const SplitMapLayout = ({ children, filteredField }: Props) => {
+    const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
     return (
         <div className="flex h-screen">
             {/* LEFT PANEL (FILTER AND BUILDING CARDS)*/}
-            <div className="w-1/2 overflow-y-auto p-8">
-                {children}
+            <div className="w-1/2 bg-bg-seashell flex flex-col h-full">
+
+                {/* HEADER */}
+                <div className="bg-accent-bordeaux text-white p-4">
+                    <LeftPanelHeader />
+                </div>
+
+                {/* SCROLLABLE CONTENT */}
+                <div className="flex-1 overflow-y-auto p-6">
+                    {children( {selectedFilter, setSelectedFilter })}
+                </div>
             </div>
 
             {/* RIGHT PANEL (MAP) */}
-            <div className="w-1/2 sticky top-0 h-screen">
-                <Mapview />
+            <div className="w-1/2 h-full"> 
+                <Mapview 
+                    selectedFilter={selectedFilter}
+                    filterField={filteredField}
+                />
             </div>
 
         </div>

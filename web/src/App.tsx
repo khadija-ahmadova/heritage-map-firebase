@@ -72,33 +72,9 @@ function App() {
         />
 
         {/* Search Filters */}
-        <Route
-          path="/search-by-architect"
-          element={
-            <PublicOnlyRoute>
-              <SearchByArcitectPage />
-            </PublicOnlyRoute>
-          }
-        />
-
-        <Route
-          path="/search-by-era"
-          element={
-            <PublicOnlyRoute>
-              <SearchbyEraPage/>
-            </PublicOnlyRoute>
-          }
-        />
-
-        
-        <Route
-          path="/search-by-area"
-          element={
-            <PublicOnlyRoute>
-              <SearchByAreaPage/>
-            </PublicOnlyRoute>
-          }
-        />
+        <Route path="/search-by-architect" element={<SearchByArcitectPage />}/>
+        <Route path="/search-by-era" element={<SearchbyEraPage/>}/>
+        <Route path="/search-by-area" element={<SearchByAreaPage/>}/>
 
 
         {/* Catch-all — any unknown URL redirects to home */}

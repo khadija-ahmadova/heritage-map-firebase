@@ -1,23 +1,74 @@
+/**
+ * EraSearchPage
+ *
+ * Entry page for browsing monuments by architect.
+ *
+ * Responsibilities:
+ * - Configure SplitMapLayout for architect-based filtering
+ * - Define which Firestore field should be used ("architect")
+ *
+ * Architecture:
+ *
+ * EraSearchPage
+ *   └ SplitMapLayout
+ *        ├ Left panel → list of eras
+ *        └ Map → filtered monuments
+ *
+ * Behavior:
+ *
+ * User selects an era
+ *   ↓
+ * SplitMapLayout updates selectedFilter
+ *   ↓
+ * MapView queries Firestore:
+ *      where("period", "==", selectedperiod)
+ *   ↓
+ * Map updates with matching monuments
+ *
+ * Notes:
+ * - No data fetching logic here
+ * - Pure configuration layer
+ * - Reused pattern for EraSearchPage and AreaSearchPage
+ */
+import { useEffect, useState } from "react";
 import SplitMapLayout from "../components/layout/SplitMapLayout";
+import FilterCard from "../components/FilterCards";
+import { getUniqueFieldVaules } from "../services/filterService";
 
 const SearchbyEraPage = () => {
+    const [period, setperiod] = useState<string[]>([]);
+
+    useEffect(() => {
+        getUniqueFieldVaules("period").then(setperiod);
+    }, []);
+
     return (
-        <SplitMapLayout>
-            <h1 className="text-3xl font-bold mb-6">
-                Search by Era
-            </h1>
+        <SplitMapLayout filteredField="period">
+        {({ selectedFilter, setSelectedFilter }) => (
+            <>
+            
+            <h2 className="text-2xl font-bold mb-4">
+                periods
+            </h2>
 
-            {/* Filters */}
-            <div className="mb-6">
-                Era filter 
-            </div>
-
-            {/* Results */}
-            <div className="space-y-4">
-                building cards
-            </div>
-        </SplitMapLayout>
-    )
-}
+            <div className="space-y-3">
+                {period.map((name) => (
+                <FilterCard
+                    key={name}
+                    label={name}
+                    selected={selectedFilter === name}
+                    onClick={() =>
+                    setSelectedFilter(
+                        selectedFilter === name ? null : name
+                  )
+                }
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </SplitMapLayout>
+  );
+};
 
 export default SearchbyEraPage;
