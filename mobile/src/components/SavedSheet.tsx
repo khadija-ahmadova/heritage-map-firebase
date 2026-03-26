@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   Animated,
   Dimensions,
@@ -11,6 +11,8 @@ import {
   View,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import WantToVisitScreen from '../screens/WantToVisitScreen'
+import type { Monument } from '../hooks/useMonuments'
 
 const SCREEN_HEIGHT = Dimensions.get('window').height
 const SHEET_HEIGHT = SCREEN_HEIGHT * 0.70
@@ -25,18 +27,13 @@ const SAVED_ITEMS = [
 interface Props {
   visible: boolean
   onClose: () => void
+  onSelectMonument?: (monument: Monument) => void
 }
 
-export default function SavedSheet({ visible, onClose }: Props) {
+export default function SavedSheet({ visible, onClose, onSelectMonument }: Props) {
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current
   const scrollOffset = useRef(0)
-  const [liked, setLiked] = React.useState<string[]>([])
-
-  const toggleLike = (id: string) => {
-    setLiked((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-    )
-  }
+  const [showWantToVisit, setShowWantToVisit] = useState(false)
 
   const panResponder = useRef(
     PanResponder.create({
@@ -64,9 +61,34 @@ export default function SavedSheet({ visible, onClose }: Props) {
       duration: visible ? 300 : 250,
       useNativeDriver: true,
     }).start()
+    // reset inner navigation when sheet closes
+    if (!visible) setShowWantToVisit(false)
   }, [visible])
 
   if (!visible) return null
+
+  const handleCardPress = (id: string) => {
+    if (id === '3') setShowWantToVisit(true)
+    // handle '1' and '2' similarly when those screens exist
+  }
+
+  // when Want to Visit is open, render it on top of the sheet
+  if (showWantToVisit) {
+    return (
+      <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+        <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
+          <WantToVisitScreen
+            onBack={() => setShowWantToVisit(false)}
+            onSelectMonument={(monument) => {
+              setShowWantToVisit(false)
+              onClose()
+              onSelectMonument?.(monument)
+            }}
+          />
+        </Animated.View>
+      </View>
+    )
+  }
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
@@ -95,15 +117,23 @@ export default function SavedSheet({ visible, onClose }: Props) {
           <Text style={styles.title}>Saved List</Text>
 
           {SAVED_ITEMS.map((item) => (
-            <View key={item.id} style={styles.card}>
+            <TouchableOpacity
+              key={item.id}
+              style={styles.card}
+              onPress={() => handleCardPress(item.id)}
+              activeOpacity={0.8}
+            >
               <View style={styles.cardLeft}>
                 <Text style={styles.cardTitle}>{item.title}</Text>
-                <TouchableOpacity style={styles.arrowBtn}>
+                <TouchableOpacity
+                  style={styles.arrowBtn}
+                  onPress={() => handleCardPress(item.id)}
+                >
                   <Ionicons name="arrow-forward" size={18} color="#fff" />
                 </TouchableOpacity>
               </View>
               <View style={styles.imagePlaceholder} />
-            </View>
+            </TouchableOpacity>
           ))}
         </ScrollView>
       </Animated.View>
@@ -127,6 +157,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 12,
+    overflow: 'hidden',
   },
   dragHandleArea: {
     alignItems: 'center',
@@ -139,9 +170,9 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   scrollContent: {
-    paddingHorizontal: 24,  
-    paddingBottom: 40,      
-    paddingTop: 8,          
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+    paddingTop: 8,
   },
   title: {
     fontSize: 26,

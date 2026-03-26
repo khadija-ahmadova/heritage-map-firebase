@@ -12,6 +12,7 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import type { Monument } from '../hooks/useMonuments'
+import { useSaved } from '../context/SavedContext'
 
 interface Props {
   monument: Monument | null
@@ -25,6 +26,7 @@ const DISMISS_THRESHOLD = 80
 export default function MonumentDetailSheet({ monument, onClose }: Props) {
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current
   const scrollOffset = useRef(0)
+  const { saveMonument, unsaveMonument, isSaved } = useSaved()
 
   const panResponder = useRef(
     PanResponder.create({
@@ -63,6 +65,16 @@ export default function MonumentDetailSheet({ monument, onClose }: Props) {
   }, [monument, translateY])
 
   if (!monument) return null
+
+  const saved = isSaved(monument.id)
+
+  const handleSaveToggle = () => {
+    if (saved) {
+      unsaveMonument(monument.id)
+    } else {
+      saveMonument(monument)
+    }
+  }
 
   const detailText = [
     monument.period ? `Period: ${monument.period}` : null,
@@ -105,8 +117,16 @@ export default function MonumentDetailSheet({ monument, onClose }: Props) {
 
           {/* Action buttons */}
           <View style={styles.actionRow}>
-            <TouchableOpacity style={styles.actionButton} accessibilityLabel="Save monument">
-              <Ionicons name="bookmark-outline" size={22} color="#FFFFFF" />
+            <TouchableOpacity
+              style={[styles.actionButton, saved && styles.actionButtonActive]}
+              accessibilityLabel={saved ? 'Unsave monument' : 'Save monument'}
+              onPress={handleSaveToggle}
+            >
+              <Ionicons
+                name={saved ? 'bookmark' : 'bookmark-outline'}
+                size={22}
+                color="#FFFFFF"
+              />
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton} accessibilityLabel="Navigate to monument">
               <Ionicons name="navigate-circle-outline" size={22} color="#FFFFFF" />
@@ -174,7 +194,7 @@ const styles = StyleSheet.create({
   },
   actionRow: {
     flexDirection: 'row',
-    gap: 100,
+    gap: 25,
     marginBottom: 14,
   },
   actionButton: {
@@ -184,6 +204,9 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  actionButtonActive: {
+    backgroundColor: '#C97B3E',
   },
   detailsBox: {
     backgroundColor: '#FFE2D2',
