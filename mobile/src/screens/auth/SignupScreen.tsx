@@ -9,8 +9,9 @@ import {
   Alert,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { auth } from '../../lib/firebase'
+import { auth, db } from '../../lib/firebase'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
 
 export default function SignupScreen({ navigation }: any) {
     const [email, setEmail] = useState('')
@@ -36,7 +37,13 @@ export default function SignupScreen({ navigation }: any) {
     }
     setLoading(true)
     try {
-        await createUserWithEmailAndPassword(auth, email, password)
+        const credential = await createUserWithEmailAndPassword(auth, email, password)
+        await setDoc(doc(db, 'users', credential.user.uid), {
+          user_name: email.split('@')[0],
+          email: credential.user.email ?? email,
+          role: 'visitor',
+          created_at: serverTimestamp(),
+        })
         navigation.navigate('Opening')
     } catch (error: any) {
         Alert.alert('Sign up Failed', error.message)
