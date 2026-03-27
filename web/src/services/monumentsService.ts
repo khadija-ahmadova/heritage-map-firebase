@@ -32,18 +32,20 @@
  */
 
 
-import { collection, getDocs } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import type { Monuments } from "../types/Monuments";
 
-export async function getMonuments(): Promise<Monuments[]>
- {
-    const snapshot = await getDocs(collection(db, "monuments")) 
-    
-    return snapshot.docs.map((doc) => (
-        {
-            id: doc.id,
-            ...(doc.data() as Omit<Monuments, "id">  )
-        }
-    ))
+export async function getMonuments(): Promise<Monuments[]> {
+    const snapshot = await getDocs(collection(db, "monuments"))
+    return snapshot.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Omit<Monuments, "id">),
+    }))
+}
+
+export async function getMonumentById(id: string): Promise<Monuments | null> {
+    const snap = await getDoc(doc(db, "monuments", id))
+    if (!snap.exists()) return null
+    return { id: snap.id, ...(snap.data() as Omit<Monuments, "id">) }
 }
