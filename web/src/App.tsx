@@ -22,6 +22,7 @@ import DashboardPage from './pages/DashboardPage'
 import SearchByArcitectPage from './pages/ArchitectSearchPage'
 import SearchbyEraPage from './pages/EraSearchPage'
 import SearchByAreaPage from './pages/AreaSearchPage'
+import MonumentDetailPage from './pages/MonumentDetailPage'
 import ProtectedRoute from './components/ProtectedRoute'
 
 // PublicOnlyRoute — the mirror of ProtectedRoute.
@@ -75,6 +76,9 @@ function App() {
         <Route path="/search-by-architect" element={<SearchByArcitectPage />}/>
         <Route path="/search-by-era" element={<SearchbyEraPage/>}/>
         <Route path="/search-by-area" element={<SearchByAreaPage/>}/>
+
+        {/* Monument detail */}
+        <Route path="/monument/:id" element={<MonumentDetailPage />}/>
 
 
         {/* Catch-all — any unknown URL redirects to home */}
