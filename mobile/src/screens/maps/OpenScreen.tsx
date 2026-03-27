@@ -15,6 +15,7 @@ import { useMonuments } from '../../hooks/useMonuments'
 import type { Monument } from '../../hooks/useMonuments'
 import MonumentDetailSheet from '../../components/MonumentDetailSheet'
 import SavedSheet from '../../components/SavedSheet'
+import RouteBuilderSheet from '../../components/RouteBuilderSheet'
 
 const BAKU_REGION = {
   latitude: 40.4093,
@@ -29,12 +30,19 @@ export default function OpenScreen({ navigation }: any) {
   const [searchError, setSearchError] = useState('')
   const [selected, setSelected] = useState<Monument | null>(null)
   const [savedOpen, setSavedOpen] = useState(false)
+  const [routeVisible, setRouteVisible] = useState(false)
+  const [routeStartMonument, setRouteStartMonument] = useState<Monument | null>(null)
 
   const mapRef = useRef<MapView>(null)
   const { monuments, loading, error } = useMonuments()
 
   if (error) {
     Alert.alert('Map error', 'Could not load landmarks. Check your connection and try again.')
+  }
+
+  const handleCreateRoute = (monument: Monument) => {
+    setRouteStartMonument(monument)
+    setRouteVisible(true)
   }
 
   const handleSearch = async () => {
@@ -157,10 +165,33 @@ export default function OpenScreen({ navigation }: any) {
       )}
 
       {/* Monument detail sheet */}
-      <MonumentDetailSheet monument={selected} onClose={() => setSelected(null)} />
+      <MonumentDetailSheet
+        monument={selected}
+        onClose={() => setSelected(null)}
+        onCreateRoute={handleCreateRoute}
+      />
 
       {/* Saved sheet */}
-      <SavedSheet visible={savedOpen} onClose={() => setSavedOpen(false)} />
+      <SavedSheet
+        visible={savedOpen}
+        onClose={() => setSavedOpen(false)}
+        onSelectMonument={(monument) => {
+          setSavedOpen(false)
+          setSelected(monument)
+        }}
+      />
+
+      {/* Route builder sheet */}
+      <RouteBuilderSheet
+        visible={routeVisible}
+        initialMonument={routeStartMonument}
+        onClose={() => setRouteVisible(false)}
+        onDone={(routeMonuments) => {
+          setRouteVisible(false)
+          // TODO: use routeMonuments to draw the route on the map
+          console.log('Route confirmed:', routeMonuments.map((m) => m.name))
+        }}
+      />
 
     </View>
   )

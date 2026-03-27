@@ -17,13 +17,14 @@ import { useSaved } from '../context/SavedContext'
 interface Props {
   monument: Monument | null
   onClose: () => void
+  onCreateRoute: (monument: Monument) => void
 }
 
 const SCREEN_HEIGHT = Dimensions.get('window').height
 const SHEET_HEIGHT = SCREEN_HEIGHT * 0.62
 const DISMISS_THRESHOLD = 80
 
-export default function MonumentDetailSheet({ monument, onClose }: Props) {
+export default function MonumentDetailSheet({ monument, onClose, onCreateRoute }: Props) {
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current
   const scrollOffset = useRef(0)
   const { saveMonument, unsaveMonument, isSaved } = useSaved()
@@ -130,6 +131,13 @@ export default function MonumentDetailSheet({ monument, onClose }: Props) {
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton} accessibilityLabel="Navigate to monument">
               <Ionicons name="navigate-circle-outline" size={22} color="#FFFFFF" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionButton}
+              accessibilityLabel="Create route"
+              onPress={() => onCreateRoute(monument)}
+            >
+              <Ionicons name="add-circle-outline" size={22} color="#FFFFFF" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton} accessibilityLabel="Share monument">
               <Ionicons name="share-social-outline" size={22} color="#FFFFFF" />
