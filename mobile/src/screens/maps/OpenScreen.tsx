@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   View,
   StyleSheet,
@@ -39,6 +39,7 @@ export default function OpenScreen({ navigation }: any) {
   const [selected, setSelected] = useState<Monument | null>(null)
   const [savedOpen, setSavedOpen] = useState(false)
   const [routeVisible, setRouteVisible] = useState(false)
+  const [routeConfirmed, setRouteConfirmed] = useState(false)
   const [routeStartMonument, setRouteStartMonument] = useState<Monument | null>(null)
   const [isAddingStop, setIsAddingStop] = useState(false)
   const [routeMonuments, setRouteMonuments] = useState<Monument[]>([])
@@ -52,7 +53,7 @@ export default function OpenScreen({ navigation }: any) {
   useEffect(() => {
     if (routeVisible && routeMonuments.length >= 2) {
       fetchRoute(routeMonuments.map((m) => m.coordinates), travelMode)
-    } else {
+    } else if (!routeConfirmed) {
       clearRoute()
     }
   }, [routeMonuments, travelMode, routeVisible])
@@ -66,6 +67,7 @@ export default function OpenScreen({ navigation }: any) {
     setRouteStartMonument(monument)
     setRouteMonuments([monument])
     setConfirmedRouteIds(new Set())
+    setRouteConfirmed(false)
     setRouteVisible(true)
   }
 
@@ -80,6 +82,13 @@ export default function OpenScreen({ navigation }: any) {
     }
     setSavedOpen(false)
     setSelected(monument)
+  }
+
+  const handleExitRoute = () => {
+    setRouteConfirmed(false)
+    setConfirmedRouteIds(new Set())
+    setRouteMonuments([])
+    clearRoute()
   }
 
   const handleSearch = async () => {
@@ -185,7 +194,8 @@ export default function OpenScreen({ navigation }: any) {
         </View>
       ) : null}
 
-      {!selected && !savedOpen && !routeVisible && (
+      {/* Bottom tab bar — hidden while route builder is open or route is confirmed */}
+      {!selected && !savedOpen && !routeVisible && !routeConfirmed && (
         <View style={styles.bottomPanel}>
           <TouchableOpacity style={styles.tabItem}>
             <Ionicons name="location-outline" color="white" size={24} />
@@ -196,6 +206,14 @@ export default function OpenScreen({ navigation }: any) {
             <Text style={styles.tabText}>Saved</Text>
           </TouchableOpacity>
         </View>
+      )}
+
+      {/* Exit route button — shown after Done is pressed */}
+      {routeConfirmed && (
+        <TouchableOpacity style={styles.exitRouteBtn} onPress={handleExitRoute}>
+          <Ionicons name="close" size={18} color="#fff" />
+          <Text style={styles.exitRouteBtnText}>Exit Route</Text>
+        </TouchableOpacity>
       )}
 
       <MonumentDetailSheet
@@ -221,6 +239,7 @@ export default function OpenScreen({ navigation }: any) {
           setIsAddingStop(false)
           setRouteMonuments([])
           setConfirmedRouteIds(new Set())
+          setRouteConfirmed(false)
           clearRoute()
         }}
         onDone={(confirmed, mode) => {
@@ -229,6 +248,10 @@ export default function OpenScreen({ navigation }: any) {
           setTravelMode(mode)
           setRouteMonuments(confirmed)
           setConfirmedRouteIds(new Set(confirmed.map((m) => m.id)))
+          setRouteConfirmed(true)
+        }}
+         onRouteChange={(reordered) => {
+          setRouteMonuments(reordered)
         }}
         onModeChange={(mode) => setTravelMode(mode)}
         onAddStopMode={(active) => setIsAddingStop(active)}
@@ -320,5 +343,28 @@ const styles = StyleSheet.create({
   tabText: {
     color: 'white',
     fontSize: 12,
+  },
+  exitRouteBtn: {
+  position: 'absolute',
+  bottom: 40,
+  left: 0,
+  right: 0,
+  marginHorizontal: 'auto',
+  width: 140,
+  alignSelf: 'center',
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 6,
+  backgroundColor: '#6E3606',
+  borderRadius: 20,
+  paddingHorizontal: 20,
+  paddingVertical: 12,
+  zIndex: 1,
+  },
+  exitRouteBtnText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
   },
 })

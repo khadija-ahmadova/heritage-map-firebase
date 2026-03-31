@@ -17,6 +17,7 @@ interface Props {
   initialMonument: Monument | null
   onClose: () => void
   onDone: (routeMonuments: Monument[], mode: TravelMode) => void
+  onRouteChange: (monuments: Monument[]) => void
   onAddStopMode: (active: boolean) => void
   onModeChange: (mode: TravelMode) => void
   isAddingStop: boolean
@@ -38,6 +39,7 @@ export default function RouteBuilderSheet({
   onDone,
   onAddStopMode,
   onModeChange,
+  onRouteChange,
   isAddingStop,
   routeDistanceKm,
   routeDurationMin,
@@ -95,7 +97,13 @@ export default function RouteBuilderSheet({
     }
   }, [visible])
 
-  const removeStop = (id: string) => setRoute((prev) => prev.filter((m) => m.id !== id))
+  const removeStop = (id: string) => {
+    setRoute((prev) => {
+      const next = prev.filter((m) => m.id !== id)
+      onRouteChange(next)
+      return next
+    })
+  }
 
   const moveItem = (fromIndex: number, direction: 'up' | 'down') => {
     setRoute((prev) => {
@@ -103,6 +111,7 @@ export default function RouteBuilderSheet({
       const toIndex = direction === 'up' ? fromIndex - 1 : fromIndex + 1
       if (toIndex < 0 || toIndex >= next.length) return prev
       ;[next[fromIndex], next[toIndex]] = [next[toIndex], next[fromIndex]]
+      onRouteChange(next)
       return next
     })
   }
@@ -268,6 +277,7 @@ const styles = StyleSheet.create({
     top: 160,
     left: 16,
     width: 380,
+    maxHeight: '60%',
     backgroundColor: '#3D3228',
     borderRadius: 16,
     paddingBottom: 12,
@@ -276,6 +286,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 12,
     elevation: 16,
+  },
+  list: {
+  paddingHorizontal: 16,   
   },
   dragHandleArea: {
     alignItems: 'center',
