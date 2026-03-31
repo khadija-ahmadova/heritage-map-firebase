@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import {
   View,
   StyleSheet,
@@ -8,7 +8,7 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native'
-import MapView, { Marker } from 'react-native-maps'
+import MapView, { Marker, Polyline } from 'react-native-maps'
 import { Avatar } from 'react-native-elements'
 import { Ionicons } from '@expo/vector-icons'
 import { useMonuments } from '../../hooks/useMonuments'
@@ -16,12 +16,20 @@ import type { Monument } from '../../hooks/useMonuments'
 import MonumentDetailSheet from '../../components/MonumentDetailSheet'
 import SavedSheet from '../../components/SavedSheet'
 import RouteBuilderSheet from '../../components/RouteBuilderSheet'
+import { useRoute } from '../../hooks/useRoute'
+import type { TravelMode } from '../../hooks/useRoute'
 
 const BAKU_REGION = {
   latitude: 40.4093,
   longitude: 49.8671,
   latitudeDelta: 0.05,
   longitudeDelta: 0.05,
+}
+
+const MODE_COLORS: Record<TravelMode, string> = {
+  'foot-walking': '#4A90D9',
+  'driving-car': '#E8341C',
+  'cycling-regular': '#3DAE6E',
 }
 
 export default function OpenScreen({ navigation }: any) {
@@ -32,32 +40,58 @@ export default function OpenScreen({ navigation }: any) {
   const [savedOpen, setSavedOpen] = useState(false)
   const [routeVisible, setRouteVisible] = useState(false)
   const [routeStartMonument, setRouteStartMonument] = useState<Monument | null>(null)
+  const [isAddingStop, setIsAddingStop] = useState(false)
+  const [routeMonuments, setRouteMonuments] = useState<Monument[]>([])
+  const [travelMode, setTravelMode] = useState<TravelMode>('foot-walking')
+  const [confirmedRouteIds, setConfirmedRouteIds] = useState<Set<string>>(new Set())
 
   const mapRef = useRef<MapView>(null)
   const { monuments, loading, error } = useMonuments()
+  const { routeResult, loading: routeLoading, fetchRoute, clearRoute } = useRoute()
+
+  useEffect(() => {
+    if (routeVisible && routeMonuments.length >= 2) {
+      fetchRoute(routeMonuments.map((m) => m.coordinates), travelMode)
+    } else {
+      clearRoute()
+    }
+  }, [routeMonuments, travelMode, routeVisible])
 
   if (error) {
     Alert.alert('Map error', 'Could not load landmarks. Check your connection and try again.')
   }
 
   const handleCreateRoute = (monument: Monument) => {
+    setSelected(null)
     setRouteStartMonument(monument)
+    setRouteMonuments([monument])
+    setConfirmedRouteIds(new Set())
     setRouteVisible(true)
+  }
+
+  const handleMarkerPress = (monument: Monument) => {
+    if (isAddingStop) {
+      setRouteStartMonument(monument)
+      setRouteMonuments((prev) => {
+        const alreadyIn = prev.find((m) => m.id === monument.id)
+        return alreadyIn ? prev : [...prev, monument]
+      })
+      return
+    }
+    setSavedOpen(false)
+    setSelected(monument)
   }
 
   const handleSearch = async () => {
     if (!search.trim()) return
-
     setIsSearching(true)
     setSearchError('')
-
     try {
       const response = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(search)}&format=json&limit=1`,
         { headers: { 'User-Agent': 'HeritageMapApp/1.0' } }
       )
       const data = await response.json()
-
       if (data && data.length > 0) {
         const { lat, lon } = data[0]
         mapRef.current?.animateToRegion({
@@ -78,47 +112,50 @@ export default function OpenScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-
       <MapView
         ref={mapRef}
         style={StyleSheet.absoluteFill}
         mapType="standard"
         initialRegion={BAKU_REGION}
       >
+        {routeResult && routeResult.coordinates.length > 1 && (
+          <Polyline
+            coordinates={routeResult.coordinates}
+            strokeColor={MODE_COLORS[travelMode]}
+            strokeWidth={4}
+          />
+        )}
+
         {monuments.map((m) => (
           <Marker
             key={m.id}
             coordinate={m.coordinates}
-            onPress={() => {
-              setSavedOpen(false)
-              setSelected(m)
-            }}
+            pinColor={
+              confirmedRouteIds.has(m.id)
+                ? '#4A90D9'
+                : routeMonuments.find((r) => r.id === m.id)
+                ? '#4A90D9'
+                : undefined
+            }
+            onPress={() => handleMarkerPress(m)}
           />
         ))}
       </MapView>
 
-      {/* Loading spinner while fetching monuments */}
       {loading && (
         <View style={styles.loadingOverlay} pointerEvents="none">
           <ActivityIndicator size="large" color="#6E3606" />
         </View>
       )}
 
-      {/* Search bar + Avatar */}
       <View style={styles.searchContainer}>
         <TouchableOpacity onPress={() => navigation.navigate('Account')}>
           <Avatar
             rounded
-            icon={{
-              name: 'person',
-              type: 'ionicon',
-              color: '#FFFFFF',
-              size: 26,
-            }}
+            icon={{ name: 'person', type: 'ionicon', color: '#FFFFFF', size: 26 }}
             containerStyle={styles.avatar}
           />
         </TouchableOpacity>
-
         <View style={styles.searchBarWrapper}>
           <TextInput
             placeholder="Search location..."
@@ -142,21 +179,18 @@ export default function OpenScreen({ navigation }: any) {
         </View>
       </View>
 
-      {/* Search error message */}
       {searchError ? (
         <View style={styles.errorBox}>
           <Text style={styles.errorText}>{searchError}</Text>
         </View>
       ) : null}
 
-      {/* Bottom navigation panel — hidden when any sheet is open */}
-      {!selected && !savedOpen && (
+      {!selected && !savedOpen && !routeVisible && (
         <View style={styles.bottomPanel}>
           <TouchableOpacity style={styles.tabItem}>
             <Ionicons name="location-outline" color="white" size={24} />
             <Text style={styles.tabText}>Explore</Text>
           </TouchableOpacity>
-
           <TouchableOpacity style={styles.tabItem} onPress={() => setSavedOpen(true)}>
             <Ionicons name="bookmark-outline" color="white" size={24} />
             <Text style={styles.tabText}>Saved</Text>
@@ -164,14 +198,12 @@ export default function OpenScreen({ navigation }: any) {
         </View>
       )}
 
-      {/* Monument detail sheet */}
       <MonumentDetailSheet
         monument={selected}
         onClose={() => setSelected(null)}
         onCreateRoute={handleCreateRoute}
       />
 
-      {/* Saved sheet */}
       <SavedSheet
         visible={savedOpen}
         onClose={() => setSavedOpen(false)}
@@ -181,26 +213,36 @@ export default function OpenScreen({ navigation }: any) {
         }}
       />
 
-      {/* Route builder sheet */}
       <RouteBuilderSheet
         visible={routeVisible}
         initialMonument={routeStartMonument}
-        onClose={() => setRouteVisible(false)}
-        onDone={(routeMonuments) => {
+        onClose={() => {
           setRouteVisible(false)
-          // TODO: use routeMonuments to draw the route on the map
-          console.log('Route confirmed:', routeMonuments.map((m) => m.name))
+          setIsAddingStop(false)
+          setRouteMonuments([])
+          setConfirmedRouteIds(new Set())
+          clearRoute()
         }}
+        onDone={(confirmed, mode) => {
+          setRouteVisible(false)
+          setIsAddingStop(false)
+          setTravelMode(mode)
+          setRouteMonuments(confirmed)
+          setConfirmedRouteIds(new Set(confirmed.map((m) => m.id)))
+        }}
+        onModeChange={(mode) => setTravelMode(mode)}
+        onAddStopMode={(active) => setIsAddingStop(active)}
+        isAddingStop={isAddingStop}
+        routeDistanceKm={routeResult?.distanceKm}
+        routeDurationMin={routeResult?.durationMin}
+        routeLoading={routeLoading}
       />
-
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',

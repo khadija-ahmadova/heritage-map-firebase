@@ -1,9 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import {
   Animated,
-  Dimensions,
   PanResponder,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -12,23 +10,65 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import type { Monument } from '../hooks/useMonuments'
+import type { TravelMode } from '../hooks/useRoute'
 
 interface Props {
   visible: boolean
   initialMonument: Monument | null
   onClose: () => void
-  onDone: (routeMonuments: Monument[]) => void
+  onDone: (routeMonuments: Monument[], mode: TravelMode) => void
+  onAddStopMode: (active: boolean) => void
+  onModeChange: (mode: TravelMode) => void
+  isAddingStop: boolean
+  routeDistanceKm?: number
+  routeDurationMin?: number
+  routeLoading?: boolean
 }
 
-const SCREEN_HEIGHT = Dimensions.get('window').height
-const SHEET_HEIGHT = 260 
-const DISMISS_THRESHOLD = 60
+const MODES: { key: TravelMode; icon: string; label: string }[] = [
+  { key: 'foot-walking', icon: 'walk-outline', label: 'Walk' },
+  { key: 'driving-car', icon: 'car-outline', label: 'Drive' },
+  { key: 'cycling-regular', icon: 'bicycle-outline', label: 'Cycle' },
+]
 
-export default function RouteBuilderSheet({ visible, initialMonument, onClose, onDone }: Props) {
-  const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current
+export default function RouteBuilderSheet({
+  visible,
+  initialMonument,
+  onClose,
+  onDone,
+  onAddStopMode,
+  onModeChange,
+  isAddingStop,
+  routeDistanceKm,
+  routeDurationMin,
+  routeLoading,
+}: Props) {
   const [route, setRoute] = useState<Monument[]>([])
+  const [selectedMode, setSelectedMode] = useState<TravelMode>('foot-walking')
 
-  // Seed the route with the monument that triggered "Create Route"
+  const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderGrant: () => {
+        pan.setOffset({
+          x: (pan.x as any)._value,
+          y: (pan.y as any)._value,
+        })
+        pan.setValue({ x: 0, y: 0 })
+      },
+      onPanResponderMove: Animated.event(
+        [null, { dx: pan.x, dy: pan.y }],
+        { useNativeDriver: false }
+      ),
+      onPanResponderRelease: () => {
+        pan.flattenOffset()
+      },
+    })
+  ).current
+
   useEffect(() => {
     if (visible && initialMonument) {
       setRoute((prev) => {
@@ -39,21 +79,23 @@ export default function RouteBuilderSheet({ visible, initialMonument, onClose, o
   }, [visible, initialMonument])
 
   useEffect(() => {
-    Animated.timing(translateY, {
-      toValue: visible ? 0 : SHEET_HEIGHT,
-      duration: visible ? 300 : 250,
-      useNativeDriver: true,
-    }).start()
-    if (!visible) setRoute([])
+    if (initialMonument && visible) {
+      setRoute((prev) => {
+        const alreadyIn = prev.find((m) => m.id === initialMonument.id)
+        return alreadyIn ? prev : [...prev, initialMonument]
+      })
+    }
+  }, [initialMonument])
+
+  useEffect(() => {
+    if (!visible) {
+      setRoute([])
+      pan.setValue({ x: 0, y: 0 })
+      pan.setOffset({ x: 0, y: 0 })
+    }
   }, [visible])
 
-  const removeStop = (id: string) => {
-    setRoute((prev) => prev.filter((m) => m.id !== id))
-  }
-
-  // Drag-to-reorder helpers
-  const dragIndex = useRef<number | null>(null)
-  const dragY = useRef(new Animated.Value(0)).current
+  const removeStop = (id: string) => setRoute((prev) => prev.filter((m) => m.id !== id))
 
   const moveItem = (fromIndex: number, direction: 'up' | 'down') => {
     setRoute((prev) => {
@@ -65,24 +107,63 @@ export default function RouteBuilderSheet({ visible, initialMonument, onClose, o
     })
   }
 
+  const formatDuration = (mins: number) => {
+    if (mins < 60) return `${mins} min`
+    const h = Math.floor(mins / 60)
+    const m = mins % 60
+    return m > 0 ? `${h}h ${m}min` : `${h}h`
+  }
+
   if (!visible) return null
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-      {/* Tap backdrop to close */}
-      <TouchableOpacity
-        style={styles.backdrop}
-        activeOpacity={1}
-        onPress={onClose}
-      />
-
       <Animated.View
-        style={[styles.sheet, { transform: [{ translateY }] }]}
+        style={[
+          styles.sheet,
+          { transform: [{ translateX: pan.x }, { translateY: pan.y }] },
+        ]}
         accessibilityViewIsModal
       >
-        {/* Drag handle */}
-        <View style={styles.dragHandleArea}>
+        {/* Drag handle area — touch here to drag */}
+        <View style={styles.dragHandleArea} {...panResponder.panHandlers}>
           <View style={styles.dragHandle} />
+          <Text style={styles.dragHint}>hold & drag to move</Text>
+        </View>
+
+        {/* Travel mode selector */}
+        <View style={styles.modeRow}>
+          {MODES.map((mode) => (
+            <TouchableOpacity
+              key={mode.key}
+              style={[styles.modeBtn, selectedMode === mode.key && styles.modeBtnActive]}
+              onPress={() => {
+                setSelectedMode(mode.key)
+                onModeChange(mode.key)
+              }}
+            >
+              <Ionicons
+                name={mode.icon as any}
+                size={18}
+                color={selectedMode === mode.key ? '#fff' : '#C0A898'}
+              />
+              <Text style={[styles.modeLabel, selectedMode === mode.key && styles.modeLabelActive]}>
+                {mode.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+
+          {(routeDistanceKm !== undefined || routeLoading) && (
+            <View style={styles.infoPill}>
+              {routeLoading ? (
+                <Text style={styles.infoText}>...</Text>
+              ) : (
+                <Text style={styles.infoText}>
+                  {routeDistanceKm} km · {formatDuration(routeDurationMin ?? 0)}
+                </Text>
+              )}
+            </View>
+          )}
         </View>
 
         {/* Stop list */}
@@ -109,14 +190,25 @@ export default function RouteBuilderSheet({ visible, initialMonument, onClose, o
                       disabled={index === 0}
                       style={[styles.reorderBtn, index === 0 && styles.reorderBtnDisabled]}
                     >
-                      <Ionicons name="chevron-up" size={14} color={index === 0 ? '#C0A898' : '#fff'} />
+                      <Ionicons
+                        name="chevron-up"
+                        size={14}
+                        color={index === 0 ? '#C0A898' : '#fff'}
+                      />
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => moveItem(index, 'down')}
                       disabled={index === route.length - 1}
-                      style={[styles.reorderBtn, index === route.length - 1 && styles.reorderBtnDisabled]}
+                      style={[
+                        styles.reorderBtn,
+                        index === route.length - 1 && styles.reorderBtnDisabled,
+                      ]}
                     >
-                      <Ionicons name="chevron-down" size={14} color={index === route.length - 1 ? '#C0A898' : '#fff'} />
+                      <Ionicons
+                        name="chevron-down"
+                        size={14}
+                        color={index === route.length - 1 ? '#C0A898' : '#fff'}
+                      />
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => removeStop(monument.id)}
@@ -132,37 +224,50 @@ export default function RouteBuilderSheet({ visible, initialMonument, onClose, o
           )}
         </ScrollView>
 
-        {/* Bottom actions row */}
+        {/* Bottom actions */}
         <View style={styles.bottomRow}>
-          <TouchableOpacity style={styles.iconBtn} accessibilityLabel="Save route">
+          <TouchableOpacity style={styles.iconBtn}>
             <Ionicons name="bookmark-outline" size={20} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn} accessibilityLabel="Share route">
+          <TouchableOpacity style={styles.iconBtn}>
             <Ionicons name="share-social-outline" size={20} color="#fff" />
           </TouchableOpacity>
           <TouchableOpacity
+            style={[styles.addStopBtn, isAddingStop && styles.addStopBtnActive]}
+            onPress={() => onAddStopMode(!isAddingStop)}
+          >
+            <Ionicons name="add" size={18} color="#fff" />
+            <Text style={styles.addStopText}>
+              {isAddingStop ? 'Cancel' : 'Add Stop'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
             style={styles.doneBtn}
-            onPress={() => onDone(route)}
-            accessibilityLabel="Done"
+            onPress={() => onDone(route, selectedMode)}
           >
             <Text style={styles.doneBtnText}>Done</Text>
           </TouchableOpacity>
         </View>
+
+        {isAddingStop && (
+          <View style={styles.addStopBanner}>
+            <Ionicons name="information-circle-outline" size={16} color="#E8A876" />
+            <Text style={styles.addStopBannerText}>
+              Tap a marker on the map to add a stop
+            </Text>
+          </View>
+        )}
       </Animated.View>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'transparent',
-  },
   sheet: {
     position: 'absolute',
-    top: 80, 
+    top: 160,
     left: 16,
-    right: 16,
+    width: 380,
     backgroundColor: '#3D3228',
     borderRadius: 16,
     paddingBottom: 12,
@@ -175,17 +280,50 @@ const styles = StyleSheet.create({
   dragHandleArea: {
     alignItems: 'center',
     paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#5C4F47',
+    marginBottom: 4,
   },
   dragHandle: {
     width: 36,
     height: 4,
     backgroundColor: '#7A6A60',
     borderRadius: 2,
+    marginBottom: 4,
   },
-  list: {
-    maxHeight: 200,
+  dragHint: {
+    color: '#7A6A60',
+    fontSize: 10,
+  },
+  modeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     paddingHorizontal: 16,
+    marginBottom: 8,
   },
+  modeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 10,
+    backgroundColor: '#5C4F47',
+  },
+  modeBtnActive: { backgroundColor: '#E8A876' },
+  modeLabel: { color: '#C0A898', fontSize: 12, fontWeight: '600' },
+  modeLabelActive: { color: '#fff' },
+  infoPill: {
+    marginLeft: 'auto',
+    backgroundColor: '#5C4F47',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  infoText: { color: '#fff', fontSize: 12, fontWeight: '600' },
+  list: { maxHeight: 160, paddingHorizontal: 16 },
   emptyText: {
     color: '#C0A898',
     fontSize: 14,
@@ -195,7 +333,7 @@ const styles = StyleSheet.create({
   stopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: 10,
     gap: 10,
   },
   stopIndex: {
@@ -206,22 +344,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stopIndexText: {
-    color: '#fff',
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  stopName: {
-    flex: 1,
-    color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '500',
-  },
-  stopActions: {
-    flexDirection: 'row',
-    gap: 6,
-    alignItems: 'center',
-  },
+  stopIndexText: { color: '#fff', fontSize: 11, fontWeight: '700' },
+  stopName: { flex: 1, color: '#FFFFFF', fontSize: 14, fontWeight: '500' },
+  stopActions: { flexDirection: 'row', gap: 6, alignItems: 'center' },
   reorderBtn: {
     width: 24,
     height: 24,
@@ -230,9 +355,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  reorderBtnDisabled: {
-    backgroundColor: '#3D3228',
-  },
+  reorderBtnDisabled: { backgroundColor: '#3D3228' },
   removeBtn: {
     width: 24,
     height: 24,
@@ -241,16 +364,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  divider: {
-    height: 1,
-    backgroundColor: '#5C4F47',
-  },
+  divider: { height: 1, backgroundColor: '#5C4F47' },
   bottomRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingTop: 10,
-    gap: 12,
+    gap: 8,
   },
   iconBtn: {
     width: 38,
@@ -260,15 +380,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  addStopBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#5C4F47',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  addStopBtnActive: { backgroundColor: '#8B4A3A' },
+  addStopText: { color: '#fff', fontSize: 13, fontWeight: '600' },
   doneBtn: {
     marginLeft: 'auto',
     paddingHorizontal: 20,
     paddingVertical: 8,
     borderRadius: 10,
   },
-  doneBtnText: {
-    color: '#4A90D9',
-    fontSize: 16,
-    fontWeight: '600',
+  doneBtnText: { color: '#4A90D9', fontSize: 16, fontWeight: '600' },
+  addStopBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingBottom: 10,
   },
+  addStopBannerText: { color: '#E8A876', fontSize: 12 },
 })
