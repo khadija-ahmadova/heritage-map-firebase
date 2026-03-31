@@ -24,6 +24,7 @@
  * - TailwindCSS for styling
  */
 
+import { Link } from "react-router-dom";
 import { type Monuments } from "../../types/Monuments";
 
 interface  Props {
@@ -34,7 +35,7 @@ const MonumentsPopup = ({ monuments }: Props) => {
         <div className="w-52">
 
             <h3 className="font-bold text-sm">{monuments.name}</h3>
-            
+
             <p className="text-xs text-gray-600">
                 {monuments.architect}
             </p>
@@ -42,6 +43,13 @@ const MonumentsPopup = ({ monuments }: Props) => {
             <p className="text-xs text-gray-500">
                 {monuments.period}
             </p>
+
+            <Link
+                to={`/monument/${monuments.id}`}
+                className="mt-2 inline-block text-xs font-medium text-accent-bordeaux hover:underline"
+            >
+                View details →
+            </Link>
         </div>
     )
 }
