@@ -18,6 +18,8 @@ import SavedSheet from '../../components/SavedSheet'
 import RouteBuilderSheet from '../../components/RouteBuilderSheet'
 import { useRoute } from '../../hooks/useRoute'
 import type { TravelMode } from '../../hooks/useRoute'
+import { useSaved } from '../../context/SavedContext'
+import type { SavedRoute } from '../../context/SavedContext'
 
 const BAKU_REGION = {
   latitude: 40.4093,
@@ -49,6 +51,7 @@ export default function OpenScreen({ navigation }: any) {
   const mapRef = useRef<MapView>(null)
   const { monuments, loading, error } = useMonuments()
   const { routeResult, loading: routeLoading, fetchRoute, clearRoute } = useRoute()
+  const { saveRoute, pushPastRoute } = useSaved()
 
   useEffect(() => {
     if (routeVisible && routeMonuments.length >= 2) {
@@ -89,6 +92,46 @@ export default function OpenScreen({ navigation }: any) {
     setConfirmedRouteIds(new Set())
     setRouteMonuments([])
     clearRoute()
+  }
+
+  // Called when user taps the bookmark icon inside RouteBuilderSheet
+  const handleSaveRoute = (name: string, monuments: Monument[], mode: TravelMode) => {
+    saveRoute({
+      name,
+      monuments,
+      mode,
+      distanceKm: routeResult?.distanceKm,
+      durationMin: routeResult?.durationMin,
+    })
+    Alert.alert('Saved', `"${name}" has been saved to your routes.`)
+  }
+
+  // Called when user taps Done — auto-pushes to past routes
+  const handleDone = (confirmed: Monument[], mode: TravelMode) => {
+    const name = confirmed.map((m) => m.name).join(' → ')
+    pushPastRoute({
+      name,
+      monuments: confirmed,
+      mode,
+      distanceKm: routeResult?.distanceKm,
+      durationMin: routeResult?.durationMin,
+    })
+    setRouteVisible(false)
+    setIsAddingStop(false)
+    setTravelMode(mode)
+    setRouteMonuments(confirmed)
+    setConfirmedRouteIds(new Set(confirmed.map((m) => m.id)))
+    setRouteConfirmed(true)
+  }
+
+  // Load a saved or past route directly onto the map
+  const handleSelectRoute = (route: SavedRoute) => {
+    setSavedOpen(false)
+    setTravelMode(route.mode)
+    setRouteMonuments(route.monuments)
+    setConfirmedRouteIds(new Set(route.monuments.map((m) => m.id)))
+    setRouteConfirmed(true)
+    fetchRoute(route.monuments.map((m) => m.coordinates), route.mode)
   }
 
   const handleSearch = async () => {
@@ -194,7 +237,6 @@ export default function OpenScreen({ navigation }: any) {
         </View>
       ) : null}
 
-      {/* Bottom tab bar — hidden while route builder is open or route is confirmed */}
       {!selected && !savedOpen && !routeVisible && !routeConfirmed && (
         <View style={styles.bottomPanel}>
           <TouchableOpacity style={styles.tabItem}>
@@ -208,7 +250,6 @@ export default function OpenScreen({ navigation }: any) {
         </View>
       )}
 
-      {/* Exit route button — shown after Done is pressed */}
       {routeConfirmed && (
         <TouchableOpacity style={styles.exitRouteBtn} onPress={handleExitRoute}>
           <Ionicons name="close" size={18} color="#fff" />
@@ -229,6 +270,7 @@ export default function OpenScreen({ navigation }: any) {
           setSavedOpen(false)
           setSelected(monument)
         }}
+        onSelectRoute={handleSelectRoute}
       />
 
       <RouteBuilderSheet
@@ -242,19 +284,11 @@ export default function OpenScreen({ navigation }: any) {
           setRouteConfirmed(false)
           clearRoute()
         }}
-        onDone={(confirmed, mode) => {
-          setRouteVisible(false)
-          setIsAddingStop(false)
-          setTravelMode(mode)
-          setRouteMonuments(confirmed)
-          setConfirmedRouteIds(new Set(confirmed.map((m) => m.id)))
-          setRouteConfirmed(true)
-        }}
-         onRouteChange={(reordered) => {
-          setRouteMonuments(reordered)
-        }}
+        onDone={handleDone}
+        onSave={handleSaveRoute}
         onModeChange={(mode) => setTravelMode(mode)}
         onAddStopMode={(active) => setIsAddingStop(active)}
+        onRouteChange={(reordered) => setRouteMonuments(reordered)}
         isAddingStop={isAddingStop}
         routeDistanceKm={routeResult?.distanceKm}
         routeDurationMin={routeResult?.durationMin}
@@ -318,11 +352,7 @@ const styles = StyleSheet.create({
     padding: 10,
     zIndex: 1,
   },
-  errorText: {
-    color: 'white',
-    textAlign: 'center',
-    fontSize: 13,
-  },
+  errorText: { color: 'white', textAlign: 'center', fontSize: 13 },
   bottomPanel: {
     position: 'absolute',
     bottom: 40,
@@ -336,35 +366,21 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     zIndex: 1,
   },
-  tabItem: {
-    alignItems: 'center',
-    gap: 4,
-  },
-  tabText: {
-    color: 'white',
-    fontSize: 12,
-  },
+  tabItem: { alignItems: 'center', gap: 4 },
+  tabText: { color: 'white', fontSize: 12 },
   exitRouteBtn: {
-  position: 'absolute',
-  bottom: 40,
-  left: 0,
-  right: 0,
-  marginHorizontal: 'auto',
-  width: 140,
-  alignSelf: 'center',
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'center',
-  gap: 6,
-  backgroundColor: '#6E3606',
-  borderRadius: 20,
-  paddingHorizontal: 20,
-  paddingVertical: 12,
-  zIndex: 1,
+    position: 'absolute',
+    bottom: 40,
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: '#6E3606',
+    borderRadius: 20,
+    paddingVertical: 12,
+    zIndex: 1,
   },
-  exitRouteBtnText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 14,
-  },
+  exitRouteBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
 })
