@@ -12,28 +12,34 @@ import {
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import WantToVisitScreen from '../screens/WantToVisitScreen'
+import SavedRoutesScreen from '../screens/SavedRoutesScreen'
+import PastRoutesScreen from '../screens/PastRoutesScreen'
 import type { Monument } from '../hooks/useMonuments'
+import type { SavedRoute } from '../context/SavedContext'
 
 const SCREEN_HEIGHT = Dimensions.get('window').height
 const SHEET_HEIGHT = SCREEN_HEIGHT * 0.70
 const DISMISS_THRESHOLD = 80
 
 const SAVED_ITEMS = [
-  { id: '1', title: 'Saved Routes' },
-  { id: '2', title: 'Past Routes' },
-  { id: '3', title: 'Want to Visit' },
+  { id: '1', title: 'Saved Routes', icon: 'map-outline' },
+  { id: '2', title: 'Past Routes', icon: 'time-outline' },
+  { id: '3', title: 'Want to Visit', icon: 'bookmark-outline' },
 ]
+
+type InnerScreen = 'savedRoutes' | 'pastRoutes' | 'wantToVisit' | null
 
 interface Props {
   visible: boolean
   onClose: () => void
   onSelectMonument?: (monument: Monument) => void
+  onSelectRoute?: (route: SavedRoute) => void
 }
 
-export default function SavedSheet({ visible, onClose, onSelectMonument }: Props) {
+export default function SavedSheet({ visible, onClose, onSelectMonument, onSelectRoute }: Props) {
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current
   const scrollOffset = useRef(0)
-  const [showWantToVisit, setShowWantToVisit] = useState(false)
+  const [innerScreen, setInnerScreen] = useState<InnerScreen>(null)
 
   const panResponder = useRef(
     PanResponder.create({
@@ -61,28 +67,61 @@ export default function SavedSheet({ visible, onClose, onSelectMonument }: Props
       duration: visible ? 300 : 250,
       useNativeDriver: true,
     }).start()
-    // reset inner navigation when sheet closes
-    if (!visible) setShowWantToVisit(false)
+    if (!visible) setInnerScreen(null)
   }, [visible])
 
   if (!visible) return null
 
   const handleCardPress = (id: string) => {
-    if (id === '3') setShowWantToVisit(true)
-    // handle '1' and '2' similarly when those screens exist
+    if (id === '1') setInnerScreen('savedRoutes')
+    if (id === '2') setInnerScreen('pastRoutes')
+    if (id === '3') setInnerScreen('wantToVisit')
   }
 
-  // when Want to Visit is open, render it on top of the sheet
-  if (showWantToVisit) {
+  if (innerScreen === 'wantToVisit') {
     return (
       <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
         <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
           <WantToVisitScreen
-            onBack={() => setShowWantToVisit(false)}
+            onBack={() => setInnerScreen(null)}
             onSelectMonument={(monument) => {
-              setShowWantToVisit(false)
+              setInnerScreen(null)
               onClose()
               onSelectMonument?.(monument)
+            }}
+          />
+        </Animated.View>
+      </View>
+    )
+  }
+
+  if (innerScreen === 'savedRoutes') {
+    return (
+      <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+        <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
+          <SavedRoutesScreen
+            onBack={() => setInnerScreen(null)}
+            onSelectRoute={(route) => {
+              setInnerScreen(null)
+              onClose()
+              onSelectRoute?.(route)
+            }}
+          />
+        </Animated.View>
+      </View>
+    )
+  }
+
+  if (innerScreen === 'pastRoutes') {
+    return (
+      <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+        <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
+          <PastRoutesScreen
+            onBack={() => setInnerScreen(null)}
+            onSelectRoute={(route) => {
+              setInnerScreen(null)
+              onClose()
+              onSelectRoute?.(route)
             }}
           />
         </Animated.View>
@@ -97,7 +136,6 @@ export default function SavedSheet({ visible, onClose, onSelectMonument }: Props
         accessibilityViewIsModal
         {...panResponder.panHandlers}
       >
-        {/* Drag handle */}
         <View style={styles.dragHandleArea}>
           <View style={styles.dragHandle} />
         </View>
@@ -132,7 +170,9 @@ export default function SavedSheet({ visible, onClose, onSelectMonument }: Props
                   <Ionicons name="arrow-forward" size={18} color="#fff" />
                 </TouchableOpacity>
               </View>
-              <View style={styles.imagePlaceholder} />
+              <View style={styles.iconCircle}>
+                <Ionicons name={item.icon as any} size={32} color="#C07040" />
+              </View>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -211,11 +251,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     alignSelf: 'flex-start',
   },
-  imagePlaceholder: {
+  iconCircle: {
     width: 90,
     height: 90,
     borderRadius: 30,
     backgroundColor: '#FFCFB3',
     marginLeft: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 })

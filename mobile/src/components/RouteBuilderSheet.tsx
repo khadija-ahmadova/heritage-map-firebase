@@ -5,6 +5,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native'
@@ -17,9 +18,10 @@ interface Props {
   initialMonument: Monument | null
   onClose: () => void
   onDone: (routeMonuments: Monument[], mode: TravelMode) => void
-  onRouteChange: (monuments: Monument[]) => void
   onAddStopMode: (active: boolean) => void
   onModeChange: (mode: TravelMode) => void
+  onRouteChange: (monuments: Monument[]) => void
+  onSave: (name: string, monuments: Monument[], mode: TravelMode) => void
   isAddingStop: boolean
   routeDistanceKm?: number
   routeDurationMin?: number
@@ -40,6 +42,7 @@ export default function RouteBuilderSheet({
   onAddStopMode,
   onModeChange,
   onRouteChange,
+  onSave,
   isAddingStop,
   routeDistanceKm,
   routeDurationMin,
@@ -47,6 +50,8 @@ export default function RouteBuilderSheet({
 }: Props) {
   const [route, setRoute] = useState<Monument[]>([])
   const [selectedMode, setSelectedMode] = useState<TravelMode>('foot-walking')
+  const [saveModalVisible, setSaveModalVisible] = useState(false)
+  const [saveName, setSaveName] = useState('')
 
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current
 
@@ -92,6 +97,8 @@ export default function RouteBuilderSheet({
   useEffect(() => {
     if (!visible) {
       setRoute([])
+      setSaveModalVisible(false)
+      setSaveName('')
       pan.setValue({ x: 0, y: 0 })
       pan.setOffset({ x: 0, y: 0 })
     }
@@ -116,6 +123,20 @@ export default function RouteBuilderSheet({
     })
   }
 
+  const handleSave = () => {
+    if (route.length === 0) return
+    setSaveName(route.map((m) => m.name).join(' → '))
+    setSaveModalVisible(true)
+  }
+
+  const handleConfirmSave = () => {
+    const trimmed = saveName.trim()
+    if (!trimmed) return
+    onSave(trimmed, route, selectedMode)
+    setSaveModalVisible(false)
+    setSaveName('')
+  }
+
   const formatDuration = (mins: number) => {
     if (mins < 60) return `${mins} min`
     const h = Math.floor(mins / 60)
@@ -134,7 +155,7 @@ export default function RouteBuilderSheet({
         ]}
         accessibilityViewIsModal
       >
-        {/* Drag handle area — touch here to drag */}
+        {/* Drag handle */}
         <View style={styles.dragHandleArea} {...panResponder.panHandlers}>
           <View style={styles.dragHandle} />
           <Text style={styles.dragHint}>hold & drag to move</Text>
@@ -175,11 +196,11 @@ export default function RouteBuilderSheet({
           )}
         </View>
 
-        {/* Stop list */}
+        {/* Stop list — scrollable */}
         <ScrollView
           style={styles.list}
-          scrollEnabled={route.length > 4}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           {route.length === 0 ? (
             <Text style={styles.emptyText}>No stops added yet</Text>
@@ -235,7 +256,7 @@ export default function RouteBuilderSheet({
 
         {/* Bottom actions */}
         <View style={styles.bottomRow}>
-          <TouchableOpacity style={styles.iconBtn}>
+          <TouchableOpacity style={styles.iconBtn} onPress={handleSave}>
             <Ionicons name="bookmark-outline" size={20} color="#fff" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.iconBtn}>
@@ -266,6 +287,37 @@ export default function RouteBuilderSheet({
             </Text>
           </View>
         )}
+
+        {/* Save modal — cross-platform, slides up inside the sheet */}
+        {saveModalVisible && (
+          <View style={styles.saveModal}>
+            <Text style={styles.saveModalTitle}>Save Route</Text>
+            <TextInput
+              style={styles.saveModalInput}
+              value={saveName}
+              onChangeText={setSaveName}
+              placeholder="Route name..."
+              placeholderTextColor="#9A8A80"
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={handleConfirmSave}
+            />
+            <View style={styles.saveModalButtons}>
+              <TouchableOpacity
+                style={styles.saveModalCancel}
+                onPress={() => setSaveModalVisible(false)}
+              >
+                <Text style={styles.saveModalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.saveModalConfirm}
+                onPress={handleConfirmSave}
+              >
+                <Text style={styles.saveModalConfirmText}>Save</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </Animated.View>
     </View>
   )
@@ -286,9 +338,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 12,
     elevation: 16,
-  },
-  list: {
-  paddingHorizontal: 16,   
+    overflow: 'hidden',
   },
   dragHandleArea: {
     alignItems: 'center',
@@ -305,10 +355,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     marginBottom: 4,
   },
-  dragHint: {
-    color: '#7A6A60',
-    fontSize: 10,
-  },
+  dragHint: { color: '#7A6A60', fontSize: 10 },
   modeRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -336,7 +383,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   infoText: { color: '#fff', fontSize: 12, fontWeight: '600' },
-  list: { maxHeight: 160, paddingHorizontal: 16 },
+  list: { paddingHorizontal: 16 },
   emptyText: {
     color: '#C0A898',
     fontSize: 14,
@@ -419,4 +466,55 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   addStopBannerText: { color: '#E8A876', fontSize: 12 },
+  saveModal: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#2A2018',
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+    padding: 20,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#5C4F47',
+  },
+  saveModalTitle: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  saveModalInput: {
+    backgroundColor: '#5C4F47',
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    color: '#fff',
+    fontSize: 14,
+  },
+  saveModalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 10,
+  },
+  saveModalCancel: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  saveModalCancelText: {
+    color: '#C0A898',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  saveModalConfirm: {
+    backgroundColor: '#E8A876',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  saveModalConfirmText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '700',
+  },
 })
