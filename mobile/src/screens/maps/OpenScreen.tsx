@@ -11,6 +11,7 @@ import {
 import MapView, { Marker, Polyline } from 'react-native-maps'
 import { Avatar } from 'react-native-elements'
 import { Ionicons } from '@expo/vector-icons'
+import * as Location from 'expo-location'
 import { useMonuments } from '../../hooks/useMonuments'
 import type { Monument } from '../../hooks/useMonuments'
 import MonumentDetailSheet from '../../components/MonumentDetailSheet'
@@ -47,6 +48,7 @@ export default function OpenScreen({ navigation }: any) {
   const [routeMonuments, setRouteMonuments] = useState<Monument[]>([])
   const [travelMode, setTravelMode] = useState<TravelMode>('foot-walking')
   const [confirmedRouteIds, setConfirmedRouteIds] = useState<Set<string>>(new Set())
+  const [directionsMonument, setDirectionsMonument] = useState<Monument | null>(null)
 
   const mapRef = useRef<MapView>(null)
   const { monuments, loading, error } = useMonuments()
@@ -65,8 +67,54 @@ export default function OpenScreen({ navigation }: any) {
     Alert.alert('Map error', 'Could not load landmarks. Check your connection and try again.')
   }
 
+  const handleGetDirections = async (monument: Monument) => {
+    // Clear any active route/confirmed state first
+    setRouteConfirmed(false)
+    setConfirmedRouteIds(new Set())
+    setRouteMonuments([])
+    clearRoute()
+
+    setSelected(null)
+    setDirectionsMonument(monument)
+
+    const { status } = await Location.requestForegroundPermissionsAsync()
+    if (status !== 'granted') {
+      Alert.alert('Permission denied', 'Location access is needed to show directions.')
+      setDirectionsMonument(null)
+      return
+    }
+
+    try {
+      const loc = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      })
+
+      const userCoord = {
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      }
+
+      fetchRoute([userCoord, monument.coordinates], travelMode)
+
+      mapRef.current?.fitToCoordinates([userCoord, monument.coordinates], {
+        edgePadding: { top: 80, right: 40, bottom: 160, left: 40 },
+        animated: true,
+      })
+    } catch {
+      Alert.alert('Location error', 'Could not get your current location. Try again.')
+      setDirectionsMonument(null)
+    }
+  }
+
+  const handleExitDirections = () => {
+    setDirectionsMonument(null)
+    clearRoute()
+  }
+
   const handleCreateRoute = (monument: Monument) => {
     setSelected(null)
+    setDirectionsMonument(null)
+    clearRoute()
     setRouteStartMonument(monument)
     setRouteMonuments([monument])
     setConfirmedRouteIds(new Set())
@@ -94,7 +142,6 @@ export default function OpenScreen({ navigation }: any) {
     clearRoute()
   }
 
-  // Called when user taps the bookmark icon inside RouteBuilderSheet
   const handleSaveRoute = (name: string, monuments: Monument[], mode: TravelMode) => {
     saveRoute({
       name,
@@ -106,7 +153,6 @@ export default function OpenScreen({ navigation }: any) {
     Alert.alert('Saved', `"${name}" has been saved to your routes.`)
   }
 
-  // Called when user taps Done — auto-pushes to past routes
   const handleDone = (confirmed: Monument[], mode: TravelMode) => {
     const name = confirmed.map((m) => m.name).join(' → ')
     pushPastRoute({
@@ -124,9 +170,10 @@ export default function OpenScreen({ navigation }: any) {
     setRouteConfirmed(true)
   }
 
-  // Load a saved or past route directly onto the map
   const handleSelectRoute = (route: SavedRoute) => {
     setSavedOpen(false)
+    setDirectionsMonument(null)
+    clearRoute()
     setTravelMode(route.mode)
     setRouteMonuments(route.monuments)
     setConfirmedRouteIds(new Set(route.monuments.map((m) => m.id)))
@@ -162,6 +209,9 @@ export default function OpenScreen({ navigation }: any) {
     }
   }
 
+  const isDirectionsActive = !!directionsMonument
+  const showBottomPanel = !selected && !savedOpen && !routeVisible && !routeConfirmed && !isDirectionsActive
+
   return (
     <View style={styles.container}>
       <MapView
@@ -169,11 +219,13 @@ export default function OpenScreen({ navigation }: any) {
         style={StyleSheet.absoluteFill}
         mapType="standard"
         initialRegion={BAKU_REGION}
+        showsUserLocation={true}         
+        showsMyLocationButton={false}   
       >
         {routeResult && routeResult.coordinates.length > 1 && (
           <Polyline
             coordinates={routeResult.coordinates}
-            strokeColor={MODE_COLORS[travelMode]}
+            strokeColor={isDirectionsActive ? '#4A90D9' : MODE_COLORS[travelMode]}
             strokeWidth={4}
           />
         )}
@@ -183,7 +235,9 @@ export default function OpenScreen({ navigation }: any) {
             key={m.id}
             coordinate={m.coordinates}
             pinColor={
-              confirmedRouteIds.has(m.id)
+              directionsMonument?.id === m.id
+                ? '#4A90D9'
+                : confirmedRouteIds.has(m.id)
                 ? '#4A90D9'
                 : routeMonuments.find((r) => r.id === m.id)
                 ? '#4A90D9'
@@ -194,7 +248,7 @@ export default function OpenScreen({ navigation }: any) {
         ))}
       </MapView>
 
-      {loading && (
+      {(loading || routeLoading) && (
         <View style={styles.loadingOverlay} pointerEvents="none">
           <ActivityIndicator size="large" color="#6E3606" />
         </View>
@@ -237,7 +291,7 @@ export default function OpenScreen({ navigation }: any) {
         </View>
       ) : null}
 
-      {!selected && !savedOpen && !routeVisible && !routeConfirmed && (
+      {showBottomPanel && (
         <View style={styles.bottomPanel}>
           <TouchableOpacity style={styles.tabItem}>
             <Ionicons name="location-outline" color="white" size={24} />
@@ -257,10 +311,20 @@ export default function OpenScreen({ navigation }: any) {
         </TouchableOpacity>
       )}
 
+      {isDirectionsActive && (
+        <TouchableOpacity style={styles.exitRouteBtn} onPress={handleExitDirections}>
+          <Ionicons name="close" size={18} color="#fff" />
+          <Text style={styles.exitRouteBtnText}>
+            Exit Directions — {directionsMonument!.name}
+          </Text>
+        </TouchableOpacity>
+      )}
+
       <MonumentDetailSheet
         monument={selected}
         onClose={() => setSelected(null)}
         onCreateRoute={handleCreateRoute}
+        onGetDirections={handleGetDirections}
       />
 
       <SavedSheet

@@ -18,13 +18,14 @@ interface Props {
   monument: Monument | null
   onClose: () => void
   onCreateRoute: (monument: Monument) => void
+  onGetDirections: (monument: Monument) => void
 }
 
 const SCREEN_HEIGHT = Dimensions.get('window').height
 const SHEET_HEIGHT = SCREEN_HEIGHT * 0.62
 const DISMISS_THRESHOLD = 80
 
-export default function MonumentDetailSheet({ monument, onClose, onCreateRoute }: Props) {
+export default function MonumentDetailSheet({ monument, onClose, onCreateRoute, onGetDirections }: Props) {
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current
   const scrollOffset = useRef(0)
   const { saveMonument, unsaveMonument, isSaved } = useSaved()
@@ -118,46 +119,51 @@ export default function MonumentDetailSheet({ monument, onClose, onCreateRoute }
 
           {/* Action buttons */}
           <View style={styles.actionRow}>
-          <View style={styles.actionButtonWrapper}>
-            <TouchableOpacity
-              style={[styles.actionButton, saved && styles.actionButtonActive]}
-              accessibilityLabel={saved ? 'Unsave monument' : 'Save monument'}
-              onPress={handleSaveToggle}
-            >
-              <Ionicons
-                name={saved ? 'bookmark' : 'bookmark-outline'}
-                size={22}
-                color="#FFFFFF"
-              />
-            </TouchableOpacity>
-            <Text style={styles.actionLabel}>Save</Text>
+            <View style={styles.actionButtonWrapper}>
+              <TouchableOpacity
+                style={[styles.actionButton, saved && styles.actionButtonActive]}
+                accessibilityLabel={saved ? 'Unsave monument' : 'Save monument'}
+                onPress={handleSaveToggle}
+              >
+                <Ionicons
+                  name={saved ? 'bookmark' : 'bookmark-outline'}
+                  size={22}
+                  color="#FFFFFF"
+                />
+              </TouchableOpacity>
+              <Text style={styles.actionLabel}>Save</Text>
+            </View>
+
+            <View style={styles.actionButtonWrapper}>
+              <TouchableOpacity style={styles.actionButton} accessibilityLabel="Share monument">
+                <Ionicons name="share-social-outline" size={22} color="#FFFFFF" />
+              </TouchableOpacity>
+              <Text style={styles.actionLabel}>Share</Text>
+            </View>
+
+            <View style={styles.actionButtonWrapper}>
+              <TouchableOpacity
+                style={styles.actionButton}
+                accessibilityLabel="Get directions to monument"
+                onPress={() => onGetDirections(monument)}
+              >
+                <Ionicons name="navigate-circle-outline" size={22} color="#FFFFFF" />
+              </TouchableOpacity>
+              <Text style={styles.actionLabel}>Direction</Text>
+            </View>
+
+            <View style={styles.actionButtonWrapper}>
+              <TouchableOpacity
+                style={styles.actionButton}
+                accessibilityLabel="Create route"
+                onPress={() => onCreateRoute(monument)}
+              >
+                <Ionicons name="add-circle-outline" size={22} color="#FFFFFF" />
+              </TouchableOpacity>
+              <Text style={styles.actionLabel}>Add to Route</Text>
+            </View>
           </View>
 
-          <View style={styles.actionButtonWrapper}>
-            <TouchableOpacity style={styles.actionButton} accessibilityLabel="Share monument">
-              <Ionicons name="share-social-outline" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
-            <Text style={styles.actionLabel}>Share</Text>
-          </View>
-
-          <View style={styles.actionButtonWrapper}>
-            <TouchableOpacity style={styles.actionButton} accessibilityLabel="Navigate to monument">
-              <Ionicons name="navigate-circle-outline" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
-            <Text style={styles.actionLabel}>Direction</Text>
-          </View>
-
-          <View style={styles.actionButtonWrapper}>
-            <TouchableOpacity
-              style={styles.actionButton}
-              accessibilityLabel="Create route"
-              onPress={() => onCreateRoute(monument)}
-            >
-              <Ionicons name="add-circle-outline" size={22} color="#FFFFFF" />
-            </TouchableOpacity>
-            <Text style={styles.actionLabel}>Add to Route</Text>
-          </View>
-        </View>
           {/* Details + description box */}
           <View style={styles.detailsBox}>
             <Text style={styles.detailsText}>{detailText}</Text>
