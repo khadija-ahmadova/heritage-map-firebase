@@ -46,12 +46,36 @@
 
 
 import { useEffect, useState } from "react";
-import { MapContainer, TileLayer } from "react-leaflet";
+import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import type { Monuments } from "../../types/Monuments";
 import { getMonumentsByFilter } from "../../services/filterService";
 import BuildingMarker from "./MonumentsMarker";
 import L from "leaflet"
 import markerIcon from "leaflet/dist/images/marker-icon.png"
+import "leaflet/dist/leaflet.css"
+
+
+/**
+ *  THE HELPER COMPONENT
+ * This component sits inside MapContainer to gain access to the map instance.
+ */
+const MapController = ({ activeMonument }: { activeMonument: Monuments | null}) => {
+  const map = useMap();
+
+  useEffect(() => {
+    if (activeMonument && activeMonument.coordinates) {
+      const { latitude, longitude } = activeMonument.coordinates;
+
+      // flyTo - smooth Leaflet animation function
+      map.flyTo([latitude, longitude], 17, {
+        duration: 2, // secs
+        easeLinearity: 0.25,
+      });
+    }
+  }, [activeMonument, map]);
+
+  return null;
+}
 
 const DefaultIcon = L.icon({
     iconUrl: markerIcon
@@ -62,9 +86,10 @@ L.Marker.prototype.options.icon = DefaultIcon
 interface Props {
   selectedFilter: string | null;
   filterField: "architect" | "period" | "location";
+  activeMonument: Monuments | null
 }
 
-const MapView = ({ selectedFilter, filterField }: Props) => {
+const MapView = ({ selectedFilter, filterField, activeMonument }: Props) => {
   const [monuments, setMonuments] = useState<Monuments[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -114,6 +139,8 @@ useEffect(() => {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
                 
+                <MapController activeMonument={activeMonument} />
+
                 {monuments.map((monuments) => (
                     <BuildingMarker
                         key={monuments.id}

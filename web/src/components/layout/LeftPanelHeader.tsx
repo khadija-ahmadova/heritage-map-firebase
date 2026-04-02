@@ -39,8 +39,15 @@
 
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
+import SearchBar from "../search/SearchBar";
+import type { Monuments } from "../../types/Monuments";
 
-const LeftPanelHeader = () => {
+
+interface Props {
+    onMonumentSelect: (item: Monuments) => void;
+}
+
+const LeftPanelHeader = ({onMonumentSelect}: Props) => {
     const { user } = useAuth();
     const navigate = useNavigate();
 
@@ -56,11 +63,9 @@ const LeftPanelHeader = () => {
         <div className="flex items-center  bg-white rounded-md px-3 py-2">
 
             {/* Search bar */}
-            <input
-                type="text"
-                placeholder="Search..."
-                className="w-full px-4 py-2 rounded-md bg-white text-black placeholder-gray-400 outline-none focus:ring-2 focus:ring-accent-bordeaux"
-            />
+            <div className="flex-1">
+                <SearchBar onSelect={onMonumentSelect}/>
+            </div>
 
             {/* Profile icon */}
             <button

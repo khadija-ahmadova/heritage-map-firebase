@@ -45,6 +45,7 @@
 import { useState } from "react";
 import Mapview from "../map/MapView";
 import LeftPanelHeader from "./LeftPanelHeader";
+import type { Monuments } from "../../types/Monuments";
 
 interface Props {
     children: (props:{
@@ -57,6 +58,9 @@ interface Props {
 
 const SplitMapLayout = ({ children, filteredField }: Props) => {
     const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
+    
+    const [activeMonument, setActiveMonument] = useState<Monuments | null>(null);
+    
     return (
         <div className="flex h-screen">
             {/* LEFT PANEL (FILTER AND BUILDING CARDS)*/}
@@ -64,7 +68,7 @@ const SplitMapLayout = ({ children, filteredField }: Props) => {
 
                 {/* HEADER */}
                 <div className="bg-accent-bordeaux text-white p-4">
-                    <LeftPanelHeader />
+                    <LeftPanelHeader onMonumentSelect={(m) => setActiveMonument(m)}/>
                 </div>
 
                 {/* SCROLLABLE CONTENT */}
@@ -78,6 +82,7 @@ const SplitMapLayout = ({ children, filteredField }: Props) => {
                 <Mapview 
                     selectedFilter={selectedFilter}
                     filterField={filteredField}
+                    activeMonument={activeMonument}
                 />
             </div>
 

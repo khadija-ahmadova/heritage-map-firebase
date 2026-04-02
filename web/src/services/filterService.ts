@@ -69,3 +69,43 @@ export async function getUniqueFieldVaules(field:string): Promise<string[]> {
     return Array.from(new Set(values)).filter(Boolean);
     
 }
+
+/**
+ * Search monuments by multiple fields (prefix search)
+ */
+ export async function searchMonuments(queryText:string): Promise<Monuments[]> {
+    if(!queryText) return [];
+
+    const colRef = collection(db, "monuments");
+
+    const fields: ("name" | "architect" | "period")[] = [
+        "name", 
+        "architect", 
+        "period"
+    ];
+    
+    const results: Monuments[] = [];
+
+    for (const field of fields) {
+        const q = query(
+            colRef,
+            where(field, ">=", queryText),
+            where(field, "<=", queryText + "\uf8ff")
+        );
+        const snapshot = await getDocs(q);
+
+        snapshot.docs.forEach((doc) => {
+            results.push({
+                id: doc.id,
+                ...(doc.data() as Omit<Monuments, "id">),
+            });
+        });    
+    }
+
+    // remove duplicates
+    const unique = Array.from(
+        new Map(results.map((item) => [item.id, item])).values()
+    );
+
+    return unique;
+ }
