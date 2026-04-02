@@ -49,6 +49,7 @@ export default function OpenScreen({ navigation }: any) {
   const [travelMode, setTravelMode] = useState<TravelMode>('foot-walking')
   const [confirmedRouteIds, setConfirmedRouteIds] = useState<Set<string>>(new Set())
   const [directionsMonument, setDirectionsMonument] = useState<Monument | null>(null)
+  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null)
 
   const mapRef = useRef<MapView>(null)
   const { monuments, loading, error } = useMonuments()
@@ -66,7 +67,36 @@ export default function OpenScreen({ navigation }: any) {
   if (error) {
     Alert.alert('Map error', 'Could not load landmarks. Check your connection and try again.')
   }
+  // Request location 
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync()
+      if (status !== 'granted') return
+      const loc = await Location.getCurrentPositionAsync({})
+      setUserLocation({
+        latitude: loc.coords.latitude,
+        longitude: loc.coords.longitude,
+      })
+    })()
+  }, [])
 
+  useEffect(() => {
+    if (routeVisible && routeMonuments.length >= 1 && userLocation) {
+      fetchRoute(
+        [userLocation, ...routeMonuments.map((m) => m.coordinates)],
+        travelMode
+      )
+    } else if (routeVisible && routeMonuments.length >= 2) {
+      // fallback if location permission denied
+      fetchRoute(routeMonuments.map((m) => m.coordinates), travelMode)
+    } else if (!routeConfirmed) {
+      clearRoute()
+    }
+  }, [routeMonuments, travelMode, routeVisible, userLocation])
+
+  if (error) {
+    Alert.alert('Map error', 'Could not load landmarks. Check your connection and try again.')
+  }
   const handleGetDirections = async (monument: Monument) => {
     // Clear any active route/confirmed state first
     setRouteConfirmed(false)
@@ -155,10 +185,7 @@ export default function OpenScreen({ navigation }: any) {
 
   const handleDone = (confirmed: Monument[], mode: TravelMode) => {
     const name = confirmed.map((m) => m.name).join(' → ')
-    pushPastRoute({
-      name,
-      monuments: confirmed,
-      mode,
+    pushPastRoute({ name, monuments: confirmed, mode,
       distanceKm: routeResult?.distanceKm,
       durationMin: routeResult?.durationMin,
     })
@@ -168,18 +195,27 @@ export default function OpenScreen({ navigation }: any) {
     setRouteMonuments(confirmed)
     setConfirmedRouteIds(new Set(confirmed.map((m) => m.id)))
     setRouteConfirmed(true)
+
+    // re-fetch with user location so the confirmed polyline also starts from user
+    if (userLocation) {
+      fetchRoute(
+        [userLocation, ...confirmed.map((m) => m.coordinates)],
+        mode
+      )
+    }
   }
 
   const handleSelectRoute = (route: SavedRoute) => {
-    setSavedOpen(false)
-    setDirectionsMonument(null)
-    clearRoute()
-    setTravelMode(route.mode)
-    setRouteMonuments(route.monuments)
-    setConfirmedRouteIds(new Set(route.monuments.map((m) => m.id)))
-    setRouteConfirmed(true)
-    fetchRoute(route.monuments.map((m) => m.coordinates), route.mode)
-  }
+  setSavedOpen(false)
+  setTravelMode(route.mode)
+  setRouteMonuments(route.monuments)
+  setConfirmedRouteIds(new Set(route.monuments.map((m) => m.id)))
+  setRouteConfirmed(true)
+  const coords = userLocation
+    ? [userLocation, ...route.monuments.map((m) => m.coordinates)]
+    : route.monuments.map((m) => m.coordinates)
+  fetchRoute(coords, route.mode)
+ }
 
   const handleSearch = async () => {
     if (!search.trim()) return
