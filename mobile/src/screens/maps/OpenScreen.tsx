@@ -1,12 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
   StyleSheet,
   Text,
-  TouchableOpacity,
   TextInput,
-  Alert,
-  ActivityIndicator,
+  TouchableOpacity,
+  View,
 } from 'react-native'
 import MapView, { Marker, Polyline } from 'react-native-maps'
 import { Avatar } from 'react-native-elements'
@@ -17,10 +18,13 @@ import type { Monument } from '../../hooks/useMonuments'
 import MonumentDetailSheet from '../../components/MonumentDetailSheet'
 import SavedSheet from '../../components/SavedSheet'
 import RouteBuilderSheet from '../../components/RouteBuilderSheet'
+import type { StartLocation } from '../../components/RouteBuilderSheet'
 import { useRoute } from '../../hooks/useRoute'
 import type { TravelMode } from '../../hooks/useRoute'
 import { useSaved } from '../../context/SavedContext'
 import type { SavedRoute } from '../../context/SavedContext'
+
+
 
 const BAKU_REGION = {
   latitude: 40.4093,
@@ -35,8 +39,46 @@ const MODE_COLORS: Record<TravelMode, string> = {
   'cycling-regular': '#3DAE6E',
 }
 
+
+
+type SearchSuggestion =
+  | { kind: 'monument'; monument: Monument }
+  | { kind: 'place'; display_name: string; lat: string; lon: string }
+
+
+
+/** Case-insensitive substring match for monument search */
+function matchMonuments(query: string, monuments: Monument[]): Monument[] {
+  const q = query.trim().toLowerCase()
+  if (!q) return []
+  return monuments.filter(
+    (m) =>
+      m.name.toLowerCase().includes(q) ||
+      m.location.toLowerCase().includes(q)
+  )
+}
+
+/** Geocode a free-text address via Nominatim; returns null on failure */
+async function geocodeAddress(
+  address: string
+): Promise<{ latitude: number; longitude: number } | null> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`,
+      { headers: { 'User-Agent': 'HeritageMapApp/1.0' } }
+    )
+    const data = await res.json()
+    if (data?.length > 0) {
+      return { latitude: parseFloat(data[0].lat), longitude: parseFloat(data[0].lon) }
+    }
+  } catch {}
+  return null
+}
+
+
 export default function OpenScreen({ navigation }: any) {
   const [search, setSearch] = useState('')
+  const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [searchError, setSearchError] = useState('')
   const [selected, setSelected] = useState<Monument | null>(null)
@@ -45,122 +87,238 @@ export default function OpenScreen({ navigation }: any) {
   const [routeConfirmed, setRouteConfirmed] = useState(false)
   const [routeStartMonument, setRouteStartMonument] = useState<Monument | null>(null)
   const [isAddingStop, setIsAddingStop] = useState(false)
+  const [isPickingStart, setIsPickingStart] = useState(false)
+  const [pickedStartMonument, setPickedStartMonument] = useState<Monument | null>(null)
   const [routeMonuments, setRouteMonuments] = useState<Monument[]>([])
   const [travelMode, setTravelMode] = useState<TravelMode>('foot-walking')
   const [confirmedRouteIds, setConfirmedRouteIds] = useState<Set<string>>(new Set())
-  const [directionsMonument, setDirectionsMonument] = useState<Monument | null>(null)
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null)
+  const [currentStart, setCurrentStart] = useState<StartLocation>({ type: 'gps' })
+  // Resolved coords for the address-type start — passed into the sheet so it
+  // can show a "located" indicator without doing async work itself
+  const [startAddressCoords, setStartAddressCoords] = useState<{ latitude: number; longitude: number } | null>(null)
 
   const mapRef = useRef<MapView>(null)
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const addressDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const { monuments, loading, error } = useMonuments()
   const { routeResult, loading: routeLoading, fetchRoute, clearRoute } = useRoute()
   const { saveRoute, pushPastRoute } = useSaved()
 
-  useEffect(() => {
-    if (routeVisible && routeMonuments.length >= 2) {
-      fetchRoute(routeMonuments.map((m) => m.coordinates), travelMode)
-    } else if (!routeConfirmed) {
-      clearRoute()
-    }
-  }, [routeMonuments, travelMode, routeVisible])
+  // GPS 
 
-  if (error) {
-    Alert.alert('Map error', 'Could not load landmarks. Check your connection and try again.')
-  }
-  // Request location 
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync()
       if (status !== 'granted') return
       const loc = await Location.getCurrentPositionAsync({})
-      setUserLocation({
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
-      })
+      setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude })
     })()
   }, [])
 
   useEffect(() => {
-    if (routeVisible && routeMonuments.length >= 1 && userLocation) {
-      fetchRoute(
-        [userLocation, ...routeMonuments.map((m) => m.coordinates)],
-        travelMode
-      )
-    } else if (routeVisible && routeMonuments.length >= 2) {
-      // fallback if location permission denied
-      fetchRoute(routeMonuments.map((m) => m.coordinates), travelMode)
-    } else if (!routeConfirmed) {
-      clearRoute()
+    if (error) {
+      Alert.alert('Map error', 'Could not load landmarks. Check your connection and try again.')
     }
-  }, [routeMonuments, travelMode, routeVisible, userLocation])
+  }, [error])
 
-  if (error) {
-    Alert.alert('Map error', 'Could not load landmarks. Check your connection and try again.')
-  }
-  const handleGetDirections = async (monument: Monument) => {
-    // Clear any active route/confirmed state first
-    setRouteConfirmed(false)
-    setConfirmedRouteIds(new Set())
-    setRouteMonuments([])
-    clearRoute()
+  // Route refresh 
 
-    setSelected(null)
-    setDirectionsMonument(monument)
+  const resolveStartCoords = useCallback(
+    async (start: StartLocation): Promise<{ latitude: number; longitude: number } | null> => {
+      if (start.type === 'gps') return userLocation
+      if (start.type === 'monument') return start.coordinates ?? null
+      if (start.type === 'address') {
+        // use pre-resolved coords if available, otherwise geocode now
+        if (startAddressCoords) return startAddressCoords
+        if (start.address?.trim()) return geocodeAddress(start.address)
+      }
+      return null
+    },
+    [userLocation, startAddressCoords]
+  )
 
-    const { status } = await Location.requestForegroundPermissionsAsync()
-    if (status !== 'granted') {
-      Alert.alert('Permission denied', 'Location access is needed to show directions.')
-      setDirectionsMonument(null)
+  const refreshRoute = useCallback(
+    async (stops: Monument[], mode: TravelMode, start: StartLocation) => {
+      if (!routeVisible && !routeConfirmed) { clearRoute(); return }
+      const startCoords = await resolveStartCoords(start)
+      const stopCoords = stops.map((m) => m.coordinates)
+      const allCoords = startCoords ? [startCoords, ...stopCoords] : stopCoords
+      if (allCoords.length >= 2) fetchRoute(allCoords, mode)
+      else clearRoute()
+    },
+    [routeVisible, routeConfirmed, resolveStartCoords, fetchRoute, clearRoute]
+  )
+
+  useEffect(() => {
+    if (routeVisible || routeConfirmed) {
+      refreshRoute(routeMonuments, travelMode, currentStart)
+    }
+  }, [routeMonuments, travelMode, routeVisible, userLocation, currentStart, startAddressCoords])
+
+  //Address geocoding (debounced, triggered when start type = address) 
+
+  const handleAddressStartChange = useCallback(
+    (address: string) => {
+      setStartAddressCoords(null)
+      if (addressDebounceRef.current) clearTimeout(addressDebounceRef.current)
+      if (!address.trim()) return
+      addressDebounceRef.current = setTimeout(async () => {
+        const coords = await geocodeAddress(address)
+        if (coords) {
+          setStartAddressCoords(coords)
+          // Pan map to show the typed start location
+          mapRef.current?.animateToRegion(
+            { ...coords, latitudeDelta: 0.01, longitudeDelta: 0.01 },
+            600
+          )
+        }
+      }, 700)
+    },
+    []
+  )
+
+  //  Search bar 
+
+  /**
+   * As the user types we:
+   * 1. Immediately filter monuments from the in-memory list (instant)
+   * 2. After a short debounce, hit Nominatim for OSM place suggestions
+   */
+  const handleSearchChange = (text: string) => {
+    setSearch(text)
+    setSearchError('')
+
+    if (!text.trim()) {
+      setSuggestions([])
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
       return
     }
 
-    try {
-      const loc = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      })
+    // 1. Instant monument matches
+    const monumentMatches: SearchSuggestion[] = matchMonuments(text, monuments).map((m) => ({
+      kind: 'monument',
+      monument: m,
+    }))
+    setSuggestions(monumentMatches)
 
-      const userCoord = {
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
+    // 2. Debounced OSM suggestions
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
+    searchDebounceRef.current = setTimeout(async () => {
+      setIsSearching(true)
+      try {
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(text)}&format=json&limit=4`,
+          { headers: { 'User-Agent': 'HeritageMapApp/1.0' } }
+        )
+        const data: { display_name: string; lat: string; lon: string }[] = await res.json()
+        const placeSuggestions: SearchSuggestion[] = (data ?? []).map((d) => ({
+          kind: 'place',
+          display_name: d.display_name,
+          lat: d.lat,
+          lon: d.lon,
+        }))
+        // Keep monument matches at the top, OSM places below
+        setSuggestions([...matchMonuments(text, monuments).map((m) => ({ kind: 'monument' as const, monument: m })), ...placeSuggestions])
+      } catch {
+        // OSM failed — monument results are still shown
+      } finally {
+        setIsSearching(false)
       }
+    }, 400)
+  }
 
-      fetchRoute([userCoord, monument.coordinates], travelMode)
-
-      mapRef.current?.fitToCoordinates([userCoord, monument.coordinates], {
-        edgePadding: { top: 80, right: 40, bottom: 160, left: 40 },
-        animated: true,
-      })
-    } catch {
-      Alert.alert('Location error', 'Could not get your current location. Try again.')
-      setDirectionsMonument(null)
+  const handleSelectSuggestion = (suggestion: SearchSuggestion) => {
+    setSuggestions([])
+    setSearch('')
+    if (suggestion.kind === 'monument') {
+      // Fly to monument and open detail sheet
+      mapRef.current?.animateToRegion(
+        {
+          ...suggestion.monument.coordinates,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        },
+        600
+      )
+      setSelected(suggestion.monument)
+    } else {
+      mapRef.current?.animateToRegion(
+        {
+          latitude: parseFloat(suggestion.lat),
+          longitude: parseFloat(suggestion.lon),
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        },
+        600
+      )
     }
   }
 
-  const handleExitDirections = () => {
-    setDirectionsMonument(null)
-    clearRoute()
+  const handleSearchSubmit = () => {
+    // If there's a top suggestion, just select it
+    if (suggestions.length > 0) {
+      handleSelectSuggestion(suggestions[0])
+      return
+    }
+    if (!search.trim()) return
+    setIsSearching(true)
+    setSearchError('')
+    fetch(
+      `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(search)}&format=json&limit=1`,
+      { headers: { 'User-Agent': 'HeritageMapApp/1.0' } }
+    )
+      .then((r) => r.json())
+      .then((data) => {
+        if (data?.length > 0) {
+          mapRef.current?.animateToRegion(
+            {
+              latitude: parseFloat(data[0].lat),
+              longitude: parseFloat(data[0].lon),
+              latitudeDelta: 0.01,
+              longitudeDelta: 0.01,
+            },
+            600
+          )
+          setSuggestions([])
+          setSearch('')
+        } else {
+          setSearchError('Location not found. Try a different search.')
+        }
+      })
+      .catch(() => setSearchError('Search failed. Check your connection.'))
+      .finally(() => setIsSearching(false))
   }
+
+  
 
   const handleCreateRoute = (monument: Monument) => {
     setSelected(null)
-    setDirectionsMonument(null)
     clearRoute()
     setRouteStartMonument(monument)
     setRouteMonuments([monument])
     setConfirmedRouteIds(new Set())
     setRouteConfirmed(false)
+    setPickedStartMonument(null)
+    setStartAddressCoords(null)
+    setCurrentStart({ type: 'gps', coordinates: userLocation ?? undefined })
     setRouteVisible(true)
   }
 
   const handleMarkerPress = (monument: Monument) => {
-    if (isAddingStop) {
-      setRouteStartMonument(monument)
-      setRouteMonuments((prev) => {
-        const alreadyIn = prev.find((m) => m.id === monument.id)
-        return alreadyIn ? prev : [...prev, monument]
-      })
+    if (isPickingStart) {
+      setPickedStartMonument(monument)
       return
     }
+    if (isAddingStop) {
+      setRouteStartMonument(monument)
+      setRouteMonuments((prev) =>
+        prev.find((m) => m.id === monument.id) ? prev : [...prev, monument]
+      )
+      return
+    }
+    setSuggestions([])
     setSavedOpen(false)
     setSelected(monument)
   }
@@ -169,84 +327,53 @@ export default function OpenScreen({ navigation }: any) {
     setRouteConfirmed(false)
     setConfirmedRouteIds(new Set())
     setRouteMonuments([])
+    setPickedStartMonument(null)
+    setStartAddressCoords(null)
     clearRoute()
   }
 
-  const handleSaveRoute = (name: string, monuments: Monument[], mode: TravelMode) => {
+  const handleSaveRoute = (name: string, mons: Monument[], mode: TravelMode) => {
     saveRoute({
-      name,
-      monuments,
-      mode,
+      name, monuments: mons, mode,
       distanceKm: routeResult?.distanceKm,
       durationMin: routeResult?.durationMin,
     })
     Alert.alert('Saved', `"${name}" has been saved to your routes.`)
   }
 
-  const handleDone = (confirmed: Monument[], mode: TravelMode) => {
-    const name = confirmed.map((m) => m.name).join(' → ')
-    pushPastRoute({ name, monuments: confirmed, mode,
+  const handleDone = (confirmed: Monument[], mode: TravelMode, start: StartLocation) => {
+    pushPastRoute({
+      name: confirmed.map((m) => m.name).join(' → '),
+      monuments: confirmed, mode,
       distanceKm: routeResult?.distanceKm,
       durationMin: routeResult?.durationMin,
     })
     setRouteVisible(false)
     setIsAddingStop(false)
+    setIsPickingStart(false)
     setTravelMode(mode)
     setRouteMonuments(confirmed)
     setConfirmedRouteIds(new Set(confirmed.map((m) => m.id)))
+    setCurrentStart(start)
     setRouteConfirmed(true)
-
-    // re-fetch with user location so the confirmed polyline also starts from user
-    if (userLocation) {
-      fetchRoute(
-        [userLocation, ...confirmed.map((m) => m.coordinates)],
-        mode
-      )
-    }
+    refreshRoute(confirmed, mode, start)
   }
 
   const handleSelectRoute = (route: SavedRoute) => {
-  setSavedOpen(false)
-  setTravelMode(route.mode)
-  setRouteMonuments(route.monuments)
-  setConfirmedRouteIds(new Set(route.monuments.map((m) => m.id)))
-  setRouteConfirmed(true)
-  const coords = userLocation
-    ? [userLocation, ...route.monuments.map((m) => m.coordinates)]
-    : route.monuments.map((m) => m.coordinates)
-  fetchRoute(coords, route.mode)
- }
-
-  const handleSearch = async () => {
-    if (!search.trim()) return
-    setIsSearching(true)
-    setSearchError('')
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(search)}&format=json&limit=1`,
-        { headers: { 'User-Agent': 'HeritageMapApp/1.0' } }
-      )
-      const data = await response.json()
-      if (data && data.length > 0) {
-        const { lat, lon } = data[0]
-        mapRef.current?.animateToRegion({
-          latitude: parseFloat(lat),
-          longitude: parseFloat(lon),
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        })
-      } else {
-        setSearchError('Location not found. Try a different search.')
-      }
-    } catch {
-      setSearchError('Search failed. Check your connection.')
-    } finally {
-      setIsSearching(false)
-    }
+    setSavedOpen(false)
+    setTravelMode(route.mode)
+    setRouteMonuments(route.monuments)
+    setConfirmedRouteIds(new Set(route.monuments.map((m) => m.id)))
+    setRouteConfirmed(true)
+    const start: StartLocation = { type: 'gps', coordinates: userLocation ?? undefined }
+    setCurrentStart(start)
+    refreshRoute(route.monuments, route.mode, start)
   }
 
-  const isDirectionsActive = !!directionsMonument
-  const showBottomPanel = !selected && !savedOpen && !routeVisible && !routeConfirmed && !isDirectionsActive
+ 
+  const showBottomPanel = !selected && !savedOpen && !routeVisible && !routeConfirmed
+  const showSuggestions = suggestions.length > 0 || isSearching
+
 
   return (
     <View style={styles.container}>
@@ -255,14 +382,26 @@ export default function OpenScreen({ navigation }: any) {
         style={StyleSheet.absoluteFill}
         mapType="standard"
         initialRegion={BAKU_REGION}
-        showsUserLocation={true}         
-        showsMyLocationButton={false}   
+        showsUserLocation
+        showsMyLocationButton={false}
+        onPress={() => {
+          if (showSuggestions) setSuggestions([])
+        }}
       >
         {routeResult && routeResult.coordinates.length > 1 && (
           <Polyline
             coordinates={routeResult.coordinates}
-            strokeColor={isDirectionsActive ? '#4A90D9' : MODE_COLORS[travelMode]}
+            strokeColor={MODE_COLORS[travelMode]}
             strokeWidth={4}
+          />
+        )}
+
+        {/* Show a distinct marker for a geocoded address start */}
+        {startAddressCoords && routeVisible && (
+          <Marker
+            coordinate={startAddressCoords}
+            pinColor="#4A90D9"
+            title="Start"
           />
         )}
 
@@ -271,7 +410,7 @@ export default function OpenScreen({ navigation }: any) {
             key={m.id}
             coordinate={m.coordinates}
             pinColor={
-              directionsMonument?.id === m.id
+              pickedStartMonument?.id === m.id
                 ? '#4A90D9'
                 : confirmedRouteIds.has(m.id)
                 ? '#4A90D9'
@@ -290,6 +429,7 @@ export default function OpenScreen({ navigation }: any) {
         </View>
       )}
 
+      {/* Search bar */}
       <View style={styles.searchContainer}>
         <TouchableOpacity onPress={() => navigation.navigate('Account')}>
           <Avatar
@@ -300,26 +440,69 @@ export default function OpenScreen({ navigation }: any) {
         </TouchableOpacity>
         <View style={styles.searchBarWrapper}>
           <TextInput
-            placeholder="Search location..."
-            onChangeText={(text) => {
-              setSearch(text)
-              setSearchError('')
-            }}
+            placeholder="Search monuments or places..."
+            onChangeText={handleSearchChange}
             value={search}
             style={styles.searchInput}
             placeholderTextColor="#999"
             returnKeyType="search"
-            onSubmitEditing={handleSearch}
+            onSubmitEditing={handleSearchSubmit}
           />
-          <TouchableOpacity onPress={handleSearch} disabled={isSearching}>
-            <Ionicons
-              name={isSearching ? 'hourglass-outline' : 'search-outline'}
-              size={20}
-              color="#6E3606"
-            />
-          </TouchableOpacity>
+          {isSearching ? (
+            <ActivityIndicator size="small" color="#6E3606" />
+          ) : search.length > 0 ? (
+            <TouchableOpacity onPress={() => { setSearch(''); setSuggestions([]) }}>
+              <Ionicons name="close-circle" size={20} color="#999" />
+            </TouchableOpacity>
+          ) : (
+            <Ionicons name="search-outline" size={20} color="#6E3606" />
+          )}
         </View>
       </View>
+
+      {/* Suggestion dropdown */}
+      {showSuggestions && (
+        <View style={styles.suggestionsBox}>
+          <FlatList
+            data={suggestions}
+            keyExtractor={(_, i) => String(i)}
+            keyboardShouldPersistTaps="handled"
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.suggestionRow}
+                onPress={() => handleSelectSuggestion(item)}
+              >
+                <Ionicons
+                  name={item.kind === 'monument' ? 'business-outline' : 'location-outline'}
+                  size={16}
+                  color={item.kind === 'monument' ? '#6E3606' : '#888'}
+                  style={styles.suggestionIcon}
+                />
+                <View style={styles.suggestionTextWrap}>
+                  <Text style={styles.suggestionPrimary} numberOfLines={1}>
+                    {item.kind === 'monument' ? item.monument.name : item.display_name.split(',')[0]}
+                  </Text>
+                  {item.kind === 'monument' && item.monument.location ? (
+                    <Text style={styles.suggestionSecondary} numberOfLines={1}>
+                      {item.monument.location}
+                    </Text>
+                  ) : item.kind === 'place' ? (
+                    <Text style={styles.suggestionSecondary} numberOfLines={1}>
+                      {item.display_name.split(',').slice(1, 3).join(',')}
+                    </Text>
+                  ) : null}
+                </View>
+                {item.kind === 'monument' && (
+                  <View style={styles.monumentBadge}>
+                    <Text style={styles.monumentBadgeText}>Monument</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            )}
+            ItemSeparatorComponent={() => <View style={styles.suggestionDivider} />}
+          />
+        </View>
+      )}
 
       {searchError ? (
         <View style={styles.errorBox}>
@@ -347,48 +530,51 @@ export default function OpenScreen({ navigation }: any) {
         </TouchableOpacity>
       )}
 
-      {isDirectionsActive && (
-        <TouchableOpacity style={styles.exitRouteBtn} onPress={handleExitDirections}>
-          <Ionicons name="close" size={18} color="#fff" />
-          <Text style={styles.exitRouteBtnText}>
-            Exit Directions — {directionsMonument!.name}
-          </Text>
-        </TouchableOpacity>
-      )}
-
       <MonumentDetailSheet
         monument={selected}
         onClose={() => setSelected(null)}
         onCreateRoute={handleCreateRoute}
-        onGetDirections={handleGetDirections}
       />
 
       <SavedSheet
         visible={savedOpen}
         onClose={() => setSavedOpen(false)}
-        onSelectMonument={(monument) => {
-          setSavedOpen(false)
-          setSelected(monument)
-        }}
+        onSelectMonument={(monument) => { setSavedOpen(false); setSelected(monument) }}
         onSelectRoute={handleSelectRoute}
       />
 
       <RouteBuilderSheet
         visible={routeVisible}
         initialMonument={routeStartMonument}
+        userLocation={userLocation}
+        startAddressCoords={startAddressCoords}
         onClose={() => {
           setRouteVisible(false)
           setIsAddingStop(false)
+          setIsPickingStart(false)
           setRouteMonuments([])
           setConfirmedRouteIds(new Set())
           setRouteConfirmed(false)
+          setPickedStartMonument(null)
+          setStartAddressCoords(null)
           clearRoute()
         }}
         onDone={handleDone}
         onSave={handleSaveRoute}
         onModeChange={(mode) => setTravelMode(mode)}
         onAddStopMode={(active) => setIsAddingStop(active)}
-        onRouteChange={(reordered) => setRouteMonuments(reordered)}
+        onPickStartMonument={(active) => {
+          setIsPickingStart(active)
+          if (!active) setPickedStartMonument(null)
+        }}
+        pickedStartMonument={pickedStartMonument}
+        onRouteChange={(reordered, start) => {
+          setRouteMonuments(reordered)
+          setCurrentStart(start)
+          // If start type switched to address, kick off geocoding
+          if (start.type === 'address') handleAddressStartChange(start.address ?? '')
+          else setStartAddressCoords(null)
+        }}
         isAddingStop={isAddingStop}
         routeDistanceKm={routeResult?.distanceKm}
         routeDurationMin={routeResult?.durationMin}
@@ -397,6 +583,8 @@ export default function OpenScreen({ navigation }: any) {
     </View>
   )
 }
+
+
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -408,79 +596,76 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     position: 'absolute',
-    top: 50,
-    left: 10,
-    right: 10,
-    zIndex: 1,
+    top: 50, left: 10, right: 10,
+    zIndex: 10,
     flexDirection: 'row',
     alignItems: 'center',
   },
-  avatar: {
-    backgroundColor: '#6E3606',
-    marginRight: 8,
-    width: 45,
-    height: 45,
-  },
+  avatar: { backgroundColor: '#6E3606', marginRight: 8, width: 45, height: 45 },
   searchBarWrapper: {
-    flex: 1,
+    flex: 1, flexDirection: 'row', alignItems: 'center',
+    backgroundColor: 'white', borderRadius: 25,
+    paddingHorizontal: 12, paddingVertical: 8,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15, shadowRadius: 4, elevation: 4,
+  },
+  searchInput: { flex: 1, fontSize: 15, color: '#333', padding: 0, marginRight: 8 },
+
+  // Suggestions dropdown
+  suggestionsBox: {
+    position: 'absolute',
+    top: 108,
+    left: 10, right: 10,
+    zIndex: 9,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    maxHeight: 260,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 8,
+    overflow: 'hidden',
+  },
+  suggestionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: 25,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
   },
-  searchInput: {
-    flex: 1,
-    fontSize: 15,
-    color: '#333',
-    padding: 0,
-    marginRight: 8,
+  suggestionIcon: { marginRight: 10 },
+  suggestionTextWrap: { flex: 1 },
+  suggestionPrimary: { fontSize: 14, color: '#1A1A1A', fontWeight: '500' },
+  suggestionSecondary: { fontSize: 12, color: '#888', marginTop: 1 },
+  monumentBadge: {
+    backgroundColor: '#FFF0E6',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginLeft: 8,
   },
+  monumentBadgeText: { fontSize: 10, color: '#6E3606', fontWeight: '700' },
+  suggestionDivider: { height: 1, backgroundColor: '#F0F0F0', marginLeft: 40 },
+
   errorBox: {
-    position: 'absolute',
-    top: 110,
-    left: 16,
-    right: 16,
+    position: 'absolute', top: 110, left: 16, right: 16,
     backgroundColor: 'rgba(220,53,69,0.9)',
-    borderRadius: 10,
-    padding: 10,
-    zIndex: 1,
+    borderRadius: 10, padding: 10, zIndex: 1,
   },
   errorText: { color: 'white', textAlign: 'center', fontSize: 13 },
   bottomPanel: {
-    position: 'absolute',
-    bottom: 40,
-    left: 16,
-    right: 16,
-    backgroundColor: '#6E3606',
-    borderRadius: 30,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingVertical: 14,
-    zIndex: 1,
+    position: 'absolute', bottom: 40, left: 16, right: 16,
+    backgroundColor: '#6E3606', borderRadius: 30,
+    flexDirection: 'row', justifyContent: 'space-around',
+    alignItems: 'center', paddingVertical: 14, zIndex: 1,
   },
   tabItem: { alignItems: 'center', gap: 4 },
   tabText: { color: 'white', fontSize: 12 },
   exitRouteBtn: {
-    position: 'absolute',
-    bottom: 40,
-    left: 16,
-    right: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: '#6E3606',
-    borderRadius: 20,
-    paddingVertical: 12,
-    zIndex: 1,
+    position: 'absolute', bottom: 40, left: 16, right: 16,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, backgroundColor: '#6E3606', borderRadius: 20,
+    paddingVertical: 12, zIndex: 1,
   },
   exitRouteBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
 })
