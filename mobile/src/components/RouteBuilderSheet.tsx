@@ -399,7 +399,7 @@ export default function RouteBuilderSheet({
             style={[styles.addStopBtn, isAddingStop && styles.addStopBtnActive]}
             onPress={() => onAddStopMode(!isAddingStop)}
           >
-            <Ionicons name="add" size={18} color="#fff" />
+           <Ionicons name={isAddingStop ? "close-circle-outline" : "add-circle-outline"} size={18} color="#fff" />
             <Text style={styles.addStopText}>{isAddingStop ? 'Cancel' : 'Add Stop'}</Text>
           </TouchableOpacity>
           <TouchableOpacity
