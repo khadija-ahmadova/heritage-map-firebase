@@ -99,6 +99,8 @@ export default function OpenScreen({ navigation }: any) {
   const [startAddressCoords, setStartAddressCoords] = useState<{ latitude: number; longitude: number } | null>(null)
 
   const mapRef = useRef<MapView>(null)
+  const routeActiveRef = useRef(false)
+  useEffect(() => { routeActiveRef.current = routeVisible || routeConfirmed }, [routeVisible, routeConfirmed])
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const addressDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -141,22 +143,22 @@ export default function OpenScreen({ navigation }: any) {
 
   const refreshRoute = useCallback(
     async (stops: Monument[], mode: TravelMode, start: StartLocation) => {
-      if (!routeVisible && !routeConfirmed) { clearRoute(); return }
+      if (!routeActiveRef.current) { clearRoute(); return }
       const startCoords = await resolveStartCoords(start)
       const stopCoords = stops.map((m) => m.coordinates)
       const allCoords = startCoords ? [startCoords, ...stopCoords] : stopCoords
       if (allCoords.length >= 2) fetchRoute(allCoords, mode)
       else clearRoute()
     },
-    [routeVisible, routeConfirmed, resolveStartCoords, fetchRoute, clearRoute]
+    [resolveStartCoords, fetchRoute, clearRoute]
   )
+
 
   useEffect(() => {
     if (routeVisible || routeConfirmed) {
       refreshRoute(routeMonuments, travelMode, currentStart)
     }
-  }, [routeMonuments, travelMode, routeVisible, userLocation, currentStart, startAddressCoords])
-
+  }, [routeMonuments, travelMode, routeVisible, routeConfirmed, userLocation, currentStart, startAddressCoords])
   //Address geocoding (debounced, triggered when start type = address) 
 
   const handleAddressStartChange = useCallback(
@@ -534,6 +536,7 @@ export default function OpenScreen({ navigation }: any) {
         monument={selected}
         onClose={() => setSelected(null)}
         onCreateRoute={handleCreateRoute}
+        onMoreInfo={(monument) => navigation.navigate('MonumentInfo', { monument })}
       />
 
       <SavedSheet

@@ -18,13 +18,14 @@ interface Props {
   monument: Monument | null
   onClose: () => void
   onCreateRoute: (monument: Monument) => void
+  onMoreInfo: (monument: Monument) => void
 }
 
 const SCREEN_HEIGHT = Dimensions.get('window').height
 const SHEET_HEIGHT = SCREEN_HEIGHT * 0.62
 const DISMISS_THRESHOLD = 80
 
-export default function MonumentDetailSheet({ monument, onClose, onCreateRoute }: Props) {
+export default function MonumentDetailSheet({ monument, onClose, onCreateRoute, onMoreInfo }: Props) {
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current
   const scrollOffset = useRef(0)
   const { saveMonument, unsaveMonument, isSaved } = useSaved()
@@ -77,11 +78,13 @@ export default function MonumentDetailSheet({ monument, onClose, onCreateRoute }
     }
   }
 
-  const detailText = [
+  const previewText = [
     monument.period ? `Period: ${monument.period}` : null,
     monument.architect ? `Architect: ${monument.architect}` : null,
     monument.location ? `Location: ${monument.location}` : null,
-    monument.description ? `Description: ${monument.description}` : null,
+    monument.description
+      ? monument.description.split(/(?<=[.!?])\s+/).slice(0, 2).join(' ')
+      : null,
   ]
     .filter(Boolean)
     .join('\n\n')
@@ -154,8 +157,8 @@ export default function MonumentDetailSheet({ monument, onClose, onCreateRoute }
 
           {/* Details + description box */}
           <View style={styles.detailsBox}>
-            <Text style={styles.detailsText}>{detailText}</Text>
-            <TouchableOpacity style={styles.arrowButton} accessibilityLabel="More info">
+            <Text style={styles.previewText }>{previewText }</Text>
+            <TouchableOpacity style={styles.arrowButton} accessibilityLabel="More info" onPress={() => onMoreInfo(monument)}>
               <Ionicons name="arrow-forward" size={18} color="white" />
             </TouchableOpacity>
           </View>
@@ -240,7 +243,7 @@ const styles = StyleSheet.create({
     padding: 14,
     paddingBottom: 52,
   },
-  detailsText: {
+  previewText : {
     fontSize: 13,
     color: '#3D2B1F',
     lineHeight: 20,

@@ -7,6 +7,7 @@ import OpenScreen from '../screens/maps/OpenScreen'
 import AccountScreen from '../screens/AccountScreen'
 import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen'
 import { SavedProvider } from '../context/SavedContext'
+import MonumentInfoScreen from '../screens/MonumentInfoScreen'
 
 const Stack = createNativeStackNavigator()
 
@@ -20,6 +21,7 @@ export default function AppNavigator() {
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           <Stack.Screen name="Opening" component={OpenScreen} />
           <Stack.Screen name="Account" component={AccountScreen} />
+          <Stack.Screen name="MonumentInfo" component={MonumentInfoScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </SavedProvider>
