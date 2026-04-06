@@ -54,7 +54,9 @@ function matchMonuments(query: string, monuments: Monument[]): Monument[] {
   return monuments.filter(
     (m) =>
       m.name.toLowerCase().includes(q) ||
-      m.location.toLowerCase().includes(q)
+      m.location.toLowerCase().includes(q) ||
+      (m.architect ?? '').toLowerCase().includes(q) ||
+      (m.period ?? '').toLowerCase().includes(q)
   )
 }
 
@@ -486,7 +488,9 @@ export default function OpenScreen({ navigation }: any) {
                   </Text>
                   {item.kind === 'monument' && item.monument.location ? (
                     <Text style={styles.suggestionSecondary} numberOfLines={1}>
-                      {item.monument.location}
+                      {[item.monument.architect, item.monument.period, item.monument.location]
+                        .filter(Boolean)
+                        .join(' · ')}
                     </Text>
                   ) : item.kind === 'place' ? (
                     <Text style={styles.suggestionSecondary} numberOfLines={1}>
