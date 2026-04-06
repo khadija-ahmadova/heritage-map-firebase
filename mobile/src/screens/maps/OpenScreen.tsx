@@ -18,6 +18,7 @@ import type { Monument } from '../../hooks/useMonuments'
 import MonumentDetailSheet from '../../components/MonumentDetailSheet'
 import SavedSheet from '../../components/SavedSheet'
 import RouteBuilderSheet from '../../components/RouteBuilderSheet'
+import ExploreSheet from '../../components/ExploreSheet'
 import type { StartLocation } from '../../components/RouteBuilderSheet'
 import { useRoute } from '../../hooks/useRoute'
 import type { TravelMode } from '../../hooks/useRoute'
@@ -96,6 +97,8 @@ export default function OpenScreen({ navigation }: any) {
   const [confirmedRouteIds, setConfirmedRouteIds] = useState<Set<string>>(new Set())
   const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null)
   const [currentStart, setCurrentStart] = useState<StartLocation>({ type: 'gps' })
+  const [exploreOpen, setExploreOpen] = useState(false)
+  const [filteredMonumentIds, setFilteredMonumentIds] = useState<Set<string> | null>(null)
   // Resolved coords for the address-type start — passed into the sheet so it
   // can show a "located" indicator without doing async work itself
   const [startAddressCoords, setStartAddressCoords] = useState<{ latitude: number; longitude: number } | null>(null)
@@ -363,6 +366,16 @@ export default function OpenScreen({ navigation }: any) {
     refreshRoute(confirmed, mode, start)
   }
 
+  const handleExploreSelect = (monument: Monument) => {
+    setExploreOpen(false)
+    setFilteredMonumentIds(null)
+    mapRef.current?.animateToRegion(
+      { ...monument.coordinates, latitudeDelta: 0.01, longitudeDelta: 0.01 },
+      600
+    )
+    setSelected(monument)
+  }
+
   const handleSelectRoute = (route: SavedRoute) => {
     setSavedOpen(false)
     setTravelMode(route.mode)
@@ -375,7 +388,7 @@ export default function OpenScreen({ navigation }: any) {
   }
 
  
-  const showBottomPanel = !selected && !savedOpen && !routeVisible && !routeConfirmed
+  const showBottomPanel = !selected && !savedOpen && !routeVisible && !routeConfirmed && !exploreOpen
   const showSuggestions = suggestions.length > 0 || isSearching
 
 
@@ -409,22 +422,22 @@ export default function OpenScreen({ navigation }: any) {
           />
         )}
 
-        {monuments.map((m) => (
-          <Marker
-            key={m.id}
-            coordinate={m.coordinates}
-            pinColor={
-              pickedStartMonument?.id === m.id
-                ? '#4A90D9'
-                : confirmedRouteIds.has(m.id)
-                ? '#4A90D9'
-                : routeMonuments.find((r) => r.id === m.id)
-                ? '#4A90D9'
-                : undefined
-            }
-            onPress={() => handleMarkerPress(m)}
-          />
-        ))}
+        {monuments
+          .filter((m) => filteredMonumentIds === null || filteredMonumentIds.has(m.id))
+          .map((m) => {
+            const isRoute =
+              pickedStartMonument?.id === m.id ||
+              confirmedRouteIds.has(m.id) ||
+              !!routeMonuments.find((r) => r.id === m.id)
+            return (
+              <Marker
+                key={`${m.id}-${isRoute}`}
+                coordinate={m.coordinates}
+                pinColor={isRoute ? '#4A90D9' : undefined}
+                onPress={() => handleMarkerPress(m)}
+              />
+            )
+          })}
       </MapView>
 
       {(loading || routeLoading) && (
@@ -518,7 +531,7 @@ export default function OpenScreen({ navigation }: any) {
 
       {showBottomPanel && (
         <View style={styles.bottomPanel}>
-          <TouchableOpacity style={styles.tabItem}>
+          <TouchableOpacity style={styles.tabItem} onPress={() => setExploreOpen(true)}>
             <Ionicons name="location-outline" color="white" size={24} />
             <Text style={styles.tabText}>Explore</Text>
           </TouchableOpacity>
@@ -586,6 +599,18 @@ export default function OpenScreen({ navigation }: any) {
         routeDistanceKm={routeResult?.distanceKm}
         routeDurationMin={routeResult?.durationMin}
         routeLoading={routeLoading}
+      />
+
+      <ExploreSheet
+        visible={exploreOpen}
+        monuments={monuments}
+        userLocation={userLocation}
+        onClose={() => {
+          setExploreOpen(false)
+          setFilteredMonumentIds(null)
+        }}
+        onSelectMonument={handleExploreSelect}
+        onFilterChange={setFilteredMonumentIds}
       />
     </View>
   )
