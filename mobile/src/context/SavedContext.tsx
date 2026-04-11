@@ -32,7 +32,7 @@ interface SavedContextType {
   unsaveMonument: (id: string) => void
   isSaved: (id: string) => boolean
 
-  // — Saved Routes (in-memory) —
+  // — Saved Routes (Firestore-backed) —
   savedRoutes: SavedRoute[]
   saveRoute: (route: Omit<SavedRoute, 'id' | 'savedAt'>) => void
   removeSavedRoute: (id: string) => void
@@ -59,13 +59,16 @@ export function SavedProvider({ children }: { children: React.ReactNode }) {
   const [savedRoutes, setSavedRoutes] = useState<SavedRoute[]>([])
   const [pastRoutes, setPastRoutes] = useState<SavedRoute[]>([])
 
-  // Rehydrate wantToVisit from Firestore on auth change
+  // Rehydrate wantToVisit and savedRoutes from Firestore on auth change
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         setWantToVisit([])
+        setSavedRoutes([])
         return
       }
+
+      // Load Want to Visit
       const savedSnap = await getDocs(
         query(collection(db, 'saved_landmarks'), where('user_uid', '==', user.uid))
       )
@@ -93,6 +96,35 @@ export function SavedProvider({ children }: { children: React.ReactNode }) {
           }
         })
       setWantToVisit(monuments)
+
+      // Load Saved Routes
+      const routesSnap = await getDocs(
+        query(collection(db, 'routes'), where('user_uid', '==', user.uid))
+      )
+      const routes: SavedRoute[] = routesSnap.docs
+        .map((d) => {
+          const data = d.data()
+          const routeMonuments: Monument[] = (data.landmarks as any[]).map((l) => ({
+            id: l.landmark_id,
+            name: l.name ?? '',
+            location: l.location ?? '',
+            period: l.period ?? '',
+            architect: l.architect ?? '',
+            description: l.description ?? '',
+            coordinates: { latitude: l.latitude ?? 0, longitude: l.longitude ?? 0 },
+          }))
+          return {
+            id: d.id,
+            name: data.title ?? '',
+            mode: data.mode as TravelMode,
+            distanceKm: data.distanceKm ?? undefined,
+            durationMin: data.durationMin ?? undefined,
+            savedAt: data.creation_time?.toMillis() ?? Date.now(),
+            monuments: routeMonuments,
+          }
+        })
+        .sort((a, b) => b.savedAt - a.savedAt)
+      setSavedRoutes(routes)
     })
     return unsubscribe
   }, [])
@@ -122,16 +154,46 @@ export function SavedProvider({ children }: { children: React.ReactNode }) {
 
   // — Saved Routes —
   const saveRoute = (route: Omit<SavedRoute, 'id' | 'savedAt'>) => {
+    const user = auth.currentUser
+    // Generate a Firestore doc reference (ID known before write)
+    const docRef = user ? doc(collection(db, 'routes')) : null
     const entry: SavedRoute = {
       ...route,
-      id: Date.now().toString(),
+      id: docRef?.id ?? Date.now().toString(),
       savedAt: Date.now(),
     }
     setSavedRoutes((prev) => [entry, ...prev])
+
+    if (user && docRef) {
+      // Fire-and-forget — monument snapshots stored inline to avoid N+1 on load
+      setDoc(docRef, {
+        user_uid: user.uid,
+        title: route.name,
+        mode: route.mode,
+        creation_time: serverTimestamp(),
+        distanceKm: route.distanceKm ?? null,
+        durationMin: route.durationMin ?? null,
+        landmarks: route.monuments.map((m, i) => ({
+          landmark_id: m.id,
+          order_index: i,
+          name: m.name,
+          location: m.location ?? '',
+          period: m.period ?? '',
+          architect: m.architect ?? '',
+          description: m.description ?? '',
+          latitude: m.coordinates.latitude,
+          longitude: m.coordinates.longitude,
+        })),
+      })
+    }
   }
 
   const removeSavedRoute = (id: string) => {
+    const user = auth.currentUser
     setSavedRoutes((prev) => prev.filter((r) => r.id !== id))
+    if (user) {
+      deleteDoc(doc(db, 'routes', id))
+    }
   }
 
   // — Past Routes —
