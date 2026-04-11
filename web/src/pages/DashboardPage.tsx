@@ -34,7 +34,17 @@ import dashboardHero from "../assets/images/Landing page hero.jpg";
 
 const SavedMonumentCard = ({ monument }: { monument: Monuments }) => (
   <div className="flex-shrink-0 w-44 bg-white rounded-xl border border-gray-100 overflow-hidden">
-    {/* Image placeholder — replace src with monument.imageUrl when available */}
+    {monument.imageUrl?.[0] ? (
+      <img
+        src={monument.imageUrl[0]}
+        alt={monument.name}
+        className="w-full h-28 object-cover"
+      />
+      ) : (
+      <div className="w-full h-28 bg-bg-seashell flex items-center justify-center">
+        {/* existing svg placeholder */}
+      </div>
+    )}
     <div className="w-full h-28 bg-bg-seashell flex items-center justify-center">
       <svg
         className="w-8 h-8 text-gray-300"

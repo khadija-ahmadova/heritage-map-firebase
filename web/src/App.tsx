@@ -49,8 +49,11 @@ function App() {
               <DashboardPage />
             </ProtectedRoute>
           }
+          
         />
         </Route>
+
+        <Route path="/monument/:id" element={<MonumentDetailPage />}/>
 
         {/* Auth pages — full-screen, no Header/Footer */}
         <Route
@@ -71,23 +74,11 @@ function App() {
         />
 
         {/* Protected pages — require login */}
-        <Route 
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-        />
 
         {/* Search Filters */}
         <Route path="/search-by-architect" element={<SearchByArcitectPage />}/>
         <Route path="/search-by-period" element={<SearchbyPeriodPage/>}/>
         <Route path="/search-by-style" element={<SearchByStylePage/>}/>
-
-        {/* Monument detail */}
-        <Route path="/monument/:id" element={<MonumentDetailPage />}/>
-
 
         {/* Catch-all — any unknown URL redirects to home */}
         <Route path="*" element={<Navigate to="/" replace />} />

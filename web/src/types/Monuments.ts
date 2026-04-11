@@ -46,4 +46,5 @@ export interface Monuments {
     period: string
     coordinates: GeoPoint
     description?: string
+    imageUrl?: string[]
 }
