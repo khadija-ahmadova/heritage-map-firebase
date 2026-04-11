@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Alert,
+  SafeAreaView,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { sendPasswordResetEmail } from 'firebase/auth'
@@ -34,73 +35,104 @@ export default function ForgotPasswordScreen({ navigation }: any) {
   }
 
   return (
-    <View style={styles.container}>
-      {/* Logo */}
-      <View style={styles.logoRow}>
-        <Ionicons name="star" size={32} color="#7B3A10" />
-        <View style={styles.logoDivider} />
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <Ionicons name="chevron-back" size={22} color="#1A1A1A" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Forgot Password</Text>
+        <View style={styles.backButton} />
       </View>
 
-      
-      {!sent ? (
-        <>
-          <Text style={styles.title}>Forgot password?</Text>
-          <Text style={styles.subtitle}>
-            No worries! Enter your email and we'll send you reset instructions.
-          </Text>
-
-          <Text style={styles.label}>Email</Text>
-          <View style={styles.inputWrapper}>
-            <Ionicons name="mail-outline" size={18} color="#999" style={styles.inputIcon} />
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your email"
-              placeholderTextColor="#999"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-            />
-          </View>
-
-          <TouchableOpacity style={styles.button} onPress={handleReset} disabled={loading}>
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.buttonText}>Send Reset Link</Text>
-            )}
-          </TouchableOpacity>
-        </>
-      ) : (
-        <View style={styles.successContainer}>
-          <View style={styles.successIcon}>
-            <Ionicons name="mail-open-outline" size={48} color="#6E3606" />
-          </View>
-          <Text style={styles.title}>Check your email</Text>
-          <Text style={styles.subtitle}>
-            We sent a password reset link to{' '}
-            <Text style={styles.emailHighlight}>{email}</Text>
-          </Text>
-          <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.buttonText}>Back to Login</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={handleReset} disabled={loading}>
-            <Text style={styles.resendText}>
-              Didn't receive the email?{' '}
-              <Text style={styles.resendLink}>Click to resend</Text>
-            </Text>
-          </TouchableOpacity>
+      <View style={styles.container}>
+        <View style={styles.logoRow}>
+          <Ionicons name="star" size={32} color="#7B3A10" />
+          <View style={styles.logoDivider} />
         </View>
-      )}
-    </View>
+
+        {!sent ? (
+          <>
+            <Text style={styles.title}>Forgot password?</Text>
+            <Text style={styles.subtitle}>
+              No worries! Enter your email and we'll send you reset instructions.
+            </Text>
+
+            <Text style={styles.label}>Email</Text>
+            <View style={styles.inputWrapper}>
+              <Ionicons name="mail-outline" size={18} color="#999" style={styles.inputIcon} />
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your email"
+                placeholderTextColor="#999"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
+
+            <TouchableOpacity style={styles.button} onPress={handleReset} disabled={loading}>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Send Reset Link</Text>
+              )}
+            </TouchableOpacity>
+          </>
+        ) : (
+          <View style={styles.successContainer}>
+            <View style={styles.successIcon}>
+              <Ionicons name="mail-open-outline" size={48} color="#6E3606" />
+            </View>
+            <Text style={styles.title}>Check your email</Text>
+            <Text style={styles.subtitle}>
+              We sent a password reset link to{' '}
+              <Text style={styles.emailHighlight}>{email}</Text>
+            </Text>
+            <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Login')}>
+              <Text style={styles.buttonText}>Back to Login</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleReset} disabled={loading}>
+              <Text style={styles.resendText}>
+                Didn't receive the email?{' '}
+                <Text style={styles.resendLink}>Click to resend</Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+    </SafeAreaView>
   )
 }
+
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1A1A1A',
+  },
+  backButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
     paddingHorizontal: 28,
-    paddingTop: 80,
+    paddingTop: 20,
   },
   logoRow: {
     flexDirection: 'row',
@@ -150,14 +182,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1a1a1a',
   },
-    button: {
-        backgroundColor: '#6E3606',
-        borderRadius: 10,
-        paddingVertical: 18,
-        alignItems: 'center',
-        alignSelf: 'stretch',
-        marginTop: 12,
-        marginBottom: 36,
+  button: {
+    backgroundColor: '#6E3606',
+    borderRadius: 10,
+    paddingVertical: 18,
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    marginTop: 12,
+    marginBottom: 36,
   },
   buttonText: {
     color: '#fff',
@@ -190,5 +222,4 @@ const styles = StyleSheet.create({
     color: '#6E3606',
     fontWeight: '600',
   },
-
 })

@@ -14,10 +14,7 @@ export default function MonumentInfoScreen({ route, navigation }: any) {
   const monument: Monument = route.params.monument
   const [complexity, setComplexity] = useState<'simplified' | 'advanced'>('simplified')
 
-  const simplifiedText = monument.description
-    ? monument.description.split(/(?<=[.!?])\s+/).slice(0, 4).join(' ')
-    : 'No description available.'
-
+  const simplifiedText = monument.simplified_desc ?? 'No description available.'
   const advancedText = monument.description ?? 'No description available.'
 
   return (
@@ -41,18 +38,30 @@ export default function MonumentInfoScreen({ route, navigation }: any) {
         {/* Name */}
         <Text style={styles.title}>{monument.name}</Text>
 
-        {/* Action buttons */}
-        <View style={styles.actionRow}>
-          <TouchableOpacity style={styles.actionBtn}>
-            <Ionicons name="bookmark-outline" size={20} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionBtn}>
-            <Ionicons name="location-outline" size={20} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionBtn}>
-            <Ionicons name="share-social-outline" size={20} color="#fff" />
-          </TouchableOpacity>
-        </View>
+      
+                {/* Meta info */}
+        {(monument.period || monument.architect || monument.location) && (
+          <View style={styles.metaBox}>
+            {monument.period && (
+              <View style={styles.metaRow}>
+                <Ionicons name="time-outline" size={16} color="#E8A876" />
+                <Text style={styles.metaText}>{monument.period}</Text>
+              </View>
+            )}
+            {monument.architect && (
+              <View style={styles.metaRow}>
+                <Ionicons name="person-outline" size={16} color="#E8A876" />
+                <Text style={styles.metaText}>{monument.architect}</Text>
+              </View>
+            )}
+            {monument.location && (
+              <View style={styles.metaRow}>
+                <Ionicons name="location-outline" size={16} color="#E8A876" />
+                <Text style={styles.metaText}>{monument.location}</Text>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Description box */}
         <View style={styles.descriptionBox}>
@@ -81,29 +90,6 @@ export default function MonumentInfoScreen({ route, navigation }: any) {
           </Text>
         </View>
 
-        {/* Meta info */}
-        {(monument.period || monument.architect || monument.location) && (
-          <View style={styles.metaBox}>
-            {monument.period && (
-              <View style={styles.metaRow}>
-                <Ionicons name="time-outline" size={16} color="#E8A876" />
-                <Text style={styles.metaText}>{monument.period}</Text>
-              </View>
-            )}
-            {monument.architect && (
-              <View style={styles.metaRow}>
-                <Ionicons name="person-outline" size={16} color="#E8A876" />
-                <Text style={styles.metaText}>{monument.architect}</Text>
-              </View>
-            )}
-            {monument.location && (
-              <View style={styles.metaRow}>
-                <Ionicons name="location-outline" size={16} color="#E8A876" />
-                <Text style={styles.metaText}>{monument.location}</Text>
-              </View>
-            )}
-          </View>
-        )}
       </ScrollView>
     </View>
   )
@@ -137,13 +123,15 @@ const styles = StyleSheet.create({
 
   title: { fontSize: 20, fontWeight: '700', color: '#1A1A1A' },
 
-  actionRow: { flexDirection: 'row', gap: 30 },
-  actionBtn: {
-    width: 46, height: 46,
-    backgroundColor: '#E8A876',
-    borderRadius: 12,
-    alignItems: 'center', justifyContent: 'center',
+
+    metaBox: {
+    backgroundColor: '#FFE2D2',
+    borderRadius: 14,
+    padding: 14,
+    gap: 10,
   },
+  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  metaText: { fontSize: 13, color: '#3D2B1F', flex: 1 },
 
   descriptionBox: {
     backgroundColor: '#FFE2D2',
@@ -167,12 +155,5 @@ const styles = StyleSheet.create({
   toggleTextActive: { color: '#fff' },
   descriptionText: { fontSize: 14, color: '#3D2B1F', lineHeight: 22 },
 
-  metaBox: {
-    backgroundColor: '#FFE2D2',
-    borderRadius: 14,
-    padding: 14,
-    gap: 10,
-  },
-  metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  metaText: { fontSize: 13, color: '#3D2B1F', flex: 1 },
+
 })
