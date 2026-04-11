@@ -1,27 +1,27 @@
 /**
- * ArchitectSearchPage
+ * StyleSearchPage
  *
- * Entry page for browsing monuments by architect.
+ * Entry page for browsing monuments by styles.
  *
  * Responsibilities:
- * - Configure SplitMapLayout for architect-based filtering
- * - Define which Firestore field should be used ("architect")
+ * - Configure SplitMapLayout for style-based filtering
+ * - Define which Firestore field should be used ("style")
  *
  * Architecture:
  *
- * ArchitectSearchPage
+ * EraSearchPage
  *   └ SplitMapLayout
- *        ├ Left panel → list of architects
+ *        ├ Left panel → list of styles
  *        └ Map → filtered monuments
  *
  * Behavior:
  *
- * User selects an architect
+ * User selects a style
  *   ↓
  * SplitMapLayout updates selectedFilter
  *   ↓
  * MapView queries Firestore:
- *      where("architect", "==", selectedArchitect)
+ *      where("style", "==", selectedperiod)
  *   ↓
  * Map updates with matching monuments
  *
@@ -36,24 +36,24 @@ import SplitMapLayout from "../components/layout/SplitMapLayout";
 import FilterCard from "../components/FilterCards";
 import { getUniqueFieldValues } from "../services/filterService";
 
-const SearchByArcitectPage = () => {
-    const [architect, setArchitect] = useState<string[]>([]);
+const SearchbyStylePage = () => {
+    const [style, setstyle] = useState<string[]>([]);
 
     useEffect(() => {
-        getUniqueFieldValues("architect").then(setArchitect);
+        getUniqueFieldValues("style").then(setstyle);
     }, []);
 
     return (
-        <SplitMapLayout filteredField="architect">
+        <SplitMapLayout filteredField="style">
         {({ selectedFilter, setSelectedFilter }) => (
             <>
             
             <h2 className="text-2xl font-bold mb-4">
-                Architects
+                Periods
             </h2>
 
             <div className="space-y-3">
-                {architect.map((name) => (
+                {style.map((name) => (
                 <FilterCard
                     key={name}
                     label={name}
@@ -72,4 +72,4 @@ const SearchByArcitectPage = () => {
   );
 };
 
-export default SearchByArcitectPage;
+export default SearchbyStylePage;

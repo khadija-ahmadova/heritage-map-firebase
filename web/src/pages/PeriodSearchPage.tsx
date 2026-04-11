@@ -1,5 +1,5 @@
 /**
- * EraSearchPage
+ * PeriodSearchPage
  *
  * Entry page for browsing monuments by architect.
  *
@@ -33,13 +33,13 @@
 import { useEffect, useState } from "react";
 import SplitMapLayout from "../components/layout/SplitMapLayout";
 import FilterCard from "../components/FilterCards";
-import { getUniqueFieldVaules } from "../services/filterService";
+import { getUniqueFieldValues } from "../services/filterService";
 
-const SearchbyEraPage = () => {
+const SearchbyPeriodPage = () => {
     const [period, setperiod] = useState<string[]>([]);
 
     useEffect(() => {
-        getUniqueFieldVaules("period").then(setperiod);
+        getUniqueFieldValues("period").then(setperiod);
     }, []);
 
     return (
@@ -48,7 +48,7 @@ const SearchbyEraPage = () => {
             <>
             
             <h2 className="text-2xl font-bold mb-4">
-                periods
+                Periods
             </h2>
 
             <div className="space-y-3">
@@ -71,4 +71,4 @@ const SearchbyEraPage = () => {
   );
 };
 
-export default SearchbyEraPage;
+export default SearchbyPeriodPage;

@@ -1,6 +1,11 @@
 /**
  * MapView Component
  *
+ * Note:
+ * We use an internal 'MapController' component to access the 'useMap' hook
+ * This hook allows to trigger Leaflet's flyTo() animation
+ * whenever the 'activeMonument' prop changes.
+ * 
  * Main interactive map component displaying monuments on the map.
  *
  * Responsibilities:
@@ -49,6 +54,7 @@ import { useEffect, useState } from "react";
 import { MapContainer, TileLayer, useMap } from "react-leaflet";
 import type { Monuments } from "../../types/Monuments";
 import { getMonumentsByFilter } from "../../services/filterService";
+import type { FilterField } from "../../types/Filters";
 import BuildingMarker from "./MonumentsMarker";
 import L from "leaflet"
 import markerIcon from "leaflet/dist/images/marker-icon.png"
@@ -85,7 +91,7 @@ L.Marker.prototype.options.icon = DefaultIcon
 
 interface Props {
   selectedFilter: string | null;
-  filterField: "architect" | "period" | "location";
+  filterField: FilterField;
   activeMonument: Monuments | null
 }
 
@@ -139,6 +145,7 @@ useEffect(() => {
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 />
                 
+                {/* This component handles the zoom animation hook */}
                 <MapController activeMonument={activeMonument} />
 
                 {monuments.map((monuments) => (

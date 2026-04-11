@@ -199,6 +199,11 @@ export default function MonumentDetailPage() {
               {monument.location}
             </span>
           )}
+          {monument.style && (
+            <span className="text-xs bg-bg-seashell text-accent-brown px-3 py-1 rounded-full">
+              {monument.style}
+            </span>
+          )}
         </div>
 
       </div>

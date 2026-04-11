@@ -16,6 +16,7 @@
  * - architect
  * - period
  * - location
+ * - style
  *
  * Functions:
  *
@@ -34,13 +35,14 @@
 import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import type { Monuments } from "../types/Monuments";
+import type { FilterField } from "../types/Filters";
 
 /**
  *  Get monument with optional filtering
  */
 
 export async function getMonumentsByFilter(
-    field: "architect" | "period" | "location",
+    field: FilterField,
     value: string | null
 ): Promise<Monuments[]> {
     const colRef = collection(db, "monuments");
@@ -61,7 +63,7 @@ export async function getMonumentsByFilter(
  * Get unique values
  */
 
-export async function getUniqueFieldVaules(field:string): Promise<string[]> {
+export async function getUniqueFieldValues(field: FilterField): Promise<string[]> {
     const snapshot = await getDocs(collection(db, "monuments"));
 
     const values = snapshot.docs.map((doc => doc.data()[field]));
@@ -78,10 +80,11 @@ export async function getUniqueFieldVaules(field:string): Promise<string[]> {
 
     const colRef = collection(db, "monuments");
 
-    const fields: ("name" | "architect" | "period")[] = [
+    const fields: ("name" | "architect" | "period"| "style")[] = [
         "name", 
         "architect", 
-        "period"
+        "period",
+        "style"
     ];
     
     const results: Monuments[] = [];

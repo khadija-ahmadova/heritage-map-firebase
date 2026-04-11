@@ -44,6 +44,7 @@ import type { Monuments } from "../../types/Monuments";
 
 
 interface Props {
+    // Callback to pass the selected monument up to the SplitMapLayout
     onMonumentSelect: (item: Monuments) => void;
 }
 

@@ -20,10 +20,10 @@ import SignInPage from './pages/SignInPage'
 import RegisterPage from './pages/RegisterPage'
 import DashboardPage from './pages/DashboardPage'
 import SearchByArcitectPage from './pages/ArchitectSearchPage'
-import SearchbyEraPage from './pages/EraSearchPage'
-import SearchByAreaPage from './pages/AreaSearchPage'
+import SearchByStylePage from './pages/StyleSearchPage'
 import MonumentDetailPage from './pages/MonumentDetailPage'
 import ProtectedRoute from './components/ProtectedRoute'
+import SearchbyPeriodPage from './pages/PeriodSearchPage'
 
 // PublicOnlyRoute — the mirror of ProtectedRoute.
 // If the user is already logged in, redirect them away from /signin and /register
@@ -42,6 +42,14 @@ function App() {
         {/* Pages that use the shared Header + Footer shell */}
         <Route element={<Layout />}>
           <Route path="/" element={<LandingPage />} />
+          <Route 
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
         </Route>
 
         {/* Auth pages — full-screen, no Header/Footer */}
@@ -63,7 +71,7 @@ function App() {
         />
 
         {/* Protected pages — require login */}
-        <Route
+        <Route 
           path="/dashboard"
           element={
             <ProtectedRoute>
@@ -74,8 +82,8 @@ function App() {
 
         {/* Search Filters */}
         <Route path="/search-by-architect" element={<SearchByArcitectPage />}/>
-        <Route path="/search-by-era" element={<SearchbyEraPage/>}/>
-        <Route path="/search-by-area" element={<SearchByAreaPage/>}/>
+        <Route path="/search-by-period" element={<SearchbyPeriodPage/>}/>
+        <Route path="/search-by-style" element={<SearchByStylePage/>}/>
 
         {/* Monument detail */}
         <Route path="/monument/:id" element={<MonumentDetailPage />}/>

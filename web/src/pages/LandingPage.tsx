@@ -33,8 +33,8 @@
  */
 
 import heroImage from "../assets/images/Landing page hero.jpg";
-import architectImage from "../assets/images/architectsearch.png";
-import eraImage from "../assets/images/SEARCH-BY-ERA.jpg";
+import architectImage from "../assets/images/Search-by-architect.png";
+import eraImage from "../assets/images/Search-by-period.jpg";
 import areaImage from "../assets/images/Search-by-area.jpg";
 
 import { Link } from "react-router-dom";
@@ -115,13 +115,13 @@ const LandingPage = () => {
                         </Link>
 
                         <Link
-                            to="/search-by-era"
+                            to="/search-by-period"
                             className="group relative h-64 rounded-xl overflow-hidden"
                         >
                             {/* Background Image*/}
                             <img
                                 src={eraImage}
-                                alt="Search by Era"
+                                alt="Search by Period"
                                 className="absolute inset-0 w-full h-full object-cover"
                             />
                             {/* Dark Overlay*/}
@@ -130,19 +130,19 @@ const LandingPage = () => {
                             {/* Text Label*/}
                             <div className="relative z-10 flex items-center justify-center h-full">
                                 <h3 className="text-3xl font-bold text-accent-bordeaux">
-                                    Era
+                                    Period
                                 </h3>
                             </div>
                         </Link>
 
                         <Link
-                            to="/search-by-area"
+                            to="/search-by-style"
                             className="group relative h-64 rounded-xl overflow-hidden"
                         >
                             {/* Background Image*/}
                             <img
                                 src={areaImage}
-                                alt="Search by Area"
+                                alt="Search by Style"
                                 className="absolute inset-0 w-full h-full object-cover"
                             />
                             {/* Dark Overlay*/}
@@ -151,7 +151,7 @@ const LandingPage = () => {
                             {/* Text Label*/}
                             <div className="relative z-10 flex items-center justify-center h-full">
                                 <h3 className="text-3xl font-bold text-accent-bordeaux">
-                                    Area
+                                    Style
                                 </h3>
                             </div>
                         </Link>
@@ -161,7 +161,7 @@ const LandingPage = () => {
                     <section className="py-24 bg-bg-seashell">
                         <div className="h-[500px] w-full">
 
-                            <Mapview selectedFilter={null} filterField={"architect"}/>
+                            <Mapview selectedFilter={null} filterField={"architect"} activeMonument={null}/>
 
                         </div>
                     </section>
