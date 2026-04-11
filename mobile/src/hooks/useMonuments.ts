@@ -10,6 +10,7 @@ export interface Monument {
   period: string
   architect: string
   description: string
+  simplified_desc: string
 }
 
 interface UseMonumentsResult {
@@ -41,6 +42,7 @@ export function useMonuments(): UseMonumentsResult {
             period: data.period ?? '',
             architect: data.architect ?? '',
             description: data.description ?? '',
+            simplified_desc: data.simplified_desc ?? '',
           } satisfies Monument
         })
         setMonuments(docs)
