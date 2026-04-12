@@ -47,7 +47,7 @@ export default function PastRoutesScreen({ onBack, onSelectRoute }: Props) {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {pastRoutes.length === 0 ? (
           <View style={styles.emptyState}>
-            <Ionicons name="time-outline" size={48} color="#E8A876" />
+            <Ionicons name="time-outline" size={48} color={colors.accentSecondary} />
             <Text style={[styles.emptyText, { color: colors.text }]}>No past routes yet</Text>
             <Text style={[styles.emptySubtext, { color: colors.subtext }]}>
               Your last 3 completed routes will appear here
@@ -68,7 +68,7 @@ export default function PastRoutesScreen({ onBack, onSelectRoute }: Props) {
                     {route.durationMin !== undefined ? ` · ${formatDuration(route.durationMin)}` : ''}
                   </Text>
                 </View>
-                <TouchableOpacity style={styles.arrowBtn} onPress={() => onSelectRoute?.(route)}>
+                <TouchableOpacity style={[styles.arrowBtn, { backgroundColor: colors.accentSecondary }]} onPress={() => onSelectRoute?.(route)}>
                   <Ionicons name="arrow-forward" size={18} color="#fff" />
                 </TouchableOpacity>
               </TouchableOpacity>
@@ -100,7 +100,7 @@ const styles = StyleSheet.create({
   timeAgo: { fontSize: 12, marginLeft: 8 },
   metaText: { fontSize: 13 },
   arrowBtn: {
-    width: 36, height: 36, backgroundColor: '#E8A876',
+    width: 36, height: 36, 
     borderRadius: 18, alignItems: 'center', justifyContent: 'center',
   },
   divider: { height: 1 },

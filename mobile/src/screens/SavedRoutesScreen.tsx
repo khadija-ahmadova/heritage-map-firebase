@@ -44,7 +44,7 @@ export default function SavedRoutesScreen({ onBack, onSelectRoute }: Props) {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {savedRoutes.length === 0 ? (
           <View style={styles.emptyState}>
-            <Ionicons name="map-outline" size={48} color="#E8A876" />
+            <Ionicons name="map-outline" size={48} color={colors.accentSecondary} />
             <Text style={[styles.emptyText, { color: colors.text }]}>No saved routes yet</Text>
             <Text style={[styles.emptySubtext, { color: colors.subtext }]}>
               Tap the bookmark icon in the route builder to save a route
@@ -66,7 +66,7 @@ export default function SavedRoutesScreen({ onBack, onSelectRoute }: Props) {
                   <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(route.id, route.name)}>
                     <Ionicons name="trash-outline" size={16} color="#8B4A3A" />
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.arrowBtn} onPress={() => onSelectRoute?.(route)}>
+                  <TouchableOpacity style={[styles.arrowBtn, { backgroundColor: colors.accentSecondary }]} onPress={() => onSelectRoute?.(route)}>
                     <Ionicons name="arrow-forward" size={18} color="#fff" />
                   </TouchableOpacity>
                 </View>
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     borderRadius: 18, alignItems: 'center', justifyContent: 'center',
   },
   arrowBtn: {
-    width: 36, height: 36, backgroundColor: '#E8A876',
+    width: 36, height: 36, 
     borderRadius: 18, alignItems: 'center', justifyContent: 'center',
   },
   divider: { height: 1 },

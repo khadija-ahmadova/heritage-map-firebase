@@ -15,25 +15,31 @@ type PrefsContextType = {
     subtext: string
     border: string
     header: string
+    accent: string  
+    accentSecondary: string
   }
 }
 
 const lightColors = {
   background: '#ffffff',
-  card: '#F1EFEE',
+  card: '#FFF3EC',
   text: '#1a1a1a',
-  subtext: '#888',
-  border: '#eee',
+  subtext: '#292828',
+  border: '#ffddc4',
   header: '#ffffff',
+  accent: '#6E3606',
+  accentSecondary: '#E8A876',
 }
 
 const darkColors = {
   background: '#121212',
   card: '#1E1E1E',
-  text: '#f1f1f1',
-  subtext: '#aaa',
-  border: '#2a2a2a',
-  header: '#121212',
+  text: '#FFFFFF',
+  subtext: '#BBBBBB',
+  border: '#6B6A6A',
+  header: '#545353',
+  accent: '#52050A',
+  accentSecondary: '#8B0E16',
 }
 
 const PrefsContext = createContext<PrefsContextType>({} as PrefsContextType)

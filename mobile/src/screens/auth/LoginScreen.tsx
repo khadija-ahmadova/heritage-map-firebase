@@ -35,8 +35,8 @@ export default function LoginScreen({ navigation }: any) {
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.logoRow}>
-        <Ionicons name="star" size={32} color="#7B3A10" />
-        <View style={styles.logoDivider} />
+        <Ionicons name="star" size={32} color={colors.accent}/>
+        <View style={[styles.logoDivider, { backgroundColor: colors.accent }]} />
       </View>
       <Text style={[styles.title, { color: colors.text }]}>Log in to your account</Text>
       <Text style={[styles.subtitle, { color: colors.subtext }]}>Welcome back! Please enter your details.</Text>
@@ -71,7 +71,7 @@ export default function LoginScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+      <TouchableOpacity style={[styles.button, { backgroundColor: colors.accent }]} onPress={handleLogin} disabled={loading}>
         {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Log In</Text>}
       </TouchableOpacity>
 
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { paddingHorizontal: 28, paddingTop: 80, paddingBottom: 40 },
   logoRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 50 },
-  logoDivider: { flex: 1, height: 2, backgroundColor: '#6E3606', marginLeft: 10 },
+  logoDivider: { flex: 1, height: 2, marginLeft: 10 },
   title: { fontSize: 24, fontWeight: '700', marginBottom: 15 },
   subtitle: { fontSize: 14, marginBottom: 50 },
   label: { fontSize: 13, fontWeight: '600', marginBottom: 6 },
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
   inputIcon: { marginRight: 8 },
   input: { flex: 1, fontSize: 14 },
   button: {
-    backgroundColor: '#6E3606', borderRadius: 10, paddingVertical: 15,
+    borderRadius: 10, paddingVertical: 15,
     alignItems: 'center', marginTop: 10, marginBottom: 25,
   },
   buttonText: { color: '#fff', fontWeight: '700', fontSize: 15 },

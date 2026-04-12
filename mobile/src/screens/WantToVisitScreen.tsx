@@ -26,7 +26,7 @@ export default function WantToVisitScreen({ onBack, onSelectMonument }: Props) {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {wantToVisit.length === 0 ? (
           <View style={styles.emptyState}>
-            <Ionicons name="bookmark-outline" size={48} color="#E8A876" />
+            <Ionicons name="bookmark-outline" size={48} color={colors.accent} />
             <Text style={[styles.emptyText, { color: colors.text }]}>No saved places yet</Text>
             <Text style={[styles.emptySubtext, { color: colors.subtext }]}>
               Tap the bookmark icon on any monument to save it here
@@ -37,7 +37,7 @@ export default function WantToVisitScreen({ onBack, onSelectMonument }: Props) {
             <React.Fragment key={monument.id}>
               <TouchableOpacity style={styles.row} onPress={() => onSelectMonument?.(monument)}>
                 <Text style={[styles.locationName, { color: colors.text }]}>{monument.name}</Text>
-                <TouchableOpacity style={styles.arrowBtn} onPress={() => onSelectMonument?.(monument)}>
+                 <TouchableOpacity style={[styles.arrowBtn, { backgroundColor: colors.accentSecondary }]} onPress={() => onSelectMonument?.(monument)}>
                   <Ionicons name="arrow-forward" size={18} color="#fff" />
                 </TouchableOpacity>
               </TouchableOpacity>

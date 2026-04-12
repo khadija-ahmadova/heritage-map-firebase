@@ -458,7 +458,7 @@ export default function OpenScreen({ navigation }: any) {
           <Avatar
             rounded
             icon={{ name: 'person', type: 'ionicon', color: '#FFFFFF', size: 26 }}
-            containerStyle={styles.avatar}
+            containerStyle={[styles.avatar, { backgroundColor: colors.accent }]}
           />
         </TouchableOpacity>
         <View style={[styles.searchBarWrapper, { backgroundColor: colors.background }]}>
@@ -476,7 +476,7 @@ export default function OpenScreen({ navigation }: any) {
               <Ionicons name="close-circle" size={20} color="#999" />
             </TouchableOpacity>
           ) : (
-            <Ionicons name="search-outline" size={20} color="#6E3606" />
+            <Ionicons name="search-outline" size={20} color={colors.accent} />
           )}
         </View>
       </View>
@@ -495,7 +495,7 @@ export default function OpenScreen({ navigation }: any) {
                 <Ionicons
                   name={item.kind === 'monument' ? 'business-outline' : 'location-outline'}
                   size={16}
-                  color={item.kind === 'monument' ? '#6E3606' : '#888'}
+                  color={item.kind === 'monument' ? colors.accent : '#888'}
                   style={styles.suggestionIcon}
                 />
                 <View style={styles.suggestionTextWrap}>
@@ -515,8 +515,8 @@ export default function OpenScreen({ navigation }: any) {
                   ) : null}
                 </View>
                 {item.kind === 'monument' && (
-                  <View style={styles.monumentBadge}>
-                    <Text style={styles.monumentBadgeText}>Monument</Text>
+                  <View style={[styles.monumentBadge, { backgroundColor: colors.subtext }]}>
+                    <Text style={[styles.monumentBadgeText, { color: colors.accent }]}>Monument</Text>
                   </View>
                 )}
               </TouchableOpacity>
@@ -533,7 +533,7 @@ export default function OpenScreen({ navigation }: any) {
       ) : null}
 
       {showBottomPanel && (
-        <View style={styles.bottomPanel}>
+        <View style={[styles.bottomPanel, { backgroundColor: colors.accent }]}>
           <TouchableOpacity style={styles.tabItem} onPress={() => setExploreOpen(true)}>
             <Ionicons name="location-outline" color="white" size={24} />
             <Text style={styles.tabText}>Explore</Text>
@@ -546,7 +546,7 @@ export default function OpenScreen({ navigation }: any) {
       )}
 
       {routeConfirmed && (
-        <TouchableOpacity style={styles.exitRouteBtn} onPress={handleExitRoute}>
+       <TouchableOpacity style={[styles.exitRouteBtn, { backgroundColor: colors.accent }]} onPress={handleExitRoute}>
           <Ionicons name="close" size={18} color="#fff" />
           <Text style={styles.exitRouteBtnText}>Exit Route</Text>
         </TouchableOpacity>
@@ -637,7 +637,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  avatar: { backgroundColor: '#6E3606', marginRight: 8, width: 45, height: 45 },
+  avatar: { marginRight: 8, width: 45, height: 45 },
   searchBarWrapper: {
     flex: 1, flexDirection: 'row', alignItems: 'center',
     backgroundColor: 'white', borderRadius: 25,
@@ -680,7 +680,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     marginLeft: 8,
   },
-  monumentBadgeText: { fontSize: 10, color: '#6E3606', fontWeight: '700' },
+  monumentBadgeText: { fontSize: 10, fontWeight: '700' },
   suggestionDivider: { height: 1, backgroundColor: '#F0F0F0', marginLeft: 40 },
 
   errorBox: {
@@ -691,7 +691,7 @@ const styles = StyleSheet.create({
   errorText: { color: 'white', textAlign: 'center', fontSize: 13 },
   bottomPanel: {
     position: 'absolute', bottom: 40, left: 16, right: 16,
-    backgroundColor: '#6E3606', borderRadius: 30,
+    borderRadius: 30,
     flexDirection: 'row', justifyContent: 'space-around',
     alignItems: 'center', paddingVertical: 14, zIndex: 1,
   },
@@ -700,7 +700,7 @@ const styles = StyleSheet.create({
   exitRouteBtn: {
     position: 'absolute', bottom: 40, left: 16, right: 16,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, backgroundColor: '#6E3606', borderRadius: 20,
+    gap: 6, borderRadius: 20,
     paddingVertical: 12, zIndex: 1,
   },
   exitRouteBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },

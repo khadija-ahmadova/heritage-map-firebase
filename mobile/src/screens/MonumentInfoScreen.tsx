@@ -34,19 +34,19 @@ export default function MonumentInfoScreen({ route, navigation }: any) {
           <View style={[styles.metaBox, { backgroundColor: colors.card }]}>
             {monument.period && (
               <View style={styles.metaRow}>
-                <Ionicons name="time-outline" size={16} color="#E8A876" />
+               <Ionicons name="time-outline" size={16} color={colors.accentSecondary} />
                 <Text style={[styles.metaText, { color: colors.text }]}>{monument.period}</Text>
               </View>
             )}
             {monument.architect && (
               <View style={styles.metaRow}>
-                <Ionicons name="person-outline" size={16} color="#E8A876" />
+                <Ionicons name="person-outline" size={16} color={colors.accentSecondary} />
                 <Text style={[styles.metaText, { color: colors.text }]}>{monument.architect}</Text>
               </View>
             )}
             {monument.location && (
               <View style={styles.metaRow}>
-                <Ionicons name="location-outline" size={16} color="#E8A876" />
+                <Ionicons name="location-outline" size={16} color={colors.accentSecondary} />
                 <Text style={[styles.metaText, { color: colors.text }]}>{monument.location}</Text>
               </View>
             )}
@@ -56,7 +56,7 @@ export default function MonumentInfoScreen({ route, navigation }: any) {
         <View style={[styles.descriptionBox, { backgroundColor: colors.card }]}>
           <View style={[styles.toggleRow, { backgroundColor: colors.border }]}>
             <TouchableOpacity
-              style={[styles.toggleBtn, complexity === 'simplified' && styles.toggleBtnActive]}
+              style={[styles.toggleBtn, complexity === 'simplified' && { backgroundColor: colors.accentSecondary }]}
               onPress={() => setComplexity('simplified')}
             >
               <Text style={[styles.toggleText, complexity === 'simplified' && styles.toggleTextActive]}>
@@ -64,7 +64,7 @@ export default function MonumentInfoScreen({ route, navigation }: any) {
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.toggleBtn, complexity === 'advanced' && styles.toggleBtnActive]}
+              style={[styles.toggleBtn, complexity === 'advanced' && { backgroundColor: colors.accentSecondary }]}
               onPress={() => setComplexity('advanced')}
             >
               <Text style={[styles.toggleText, complexity === 'advanced' && styles.toggleTextActive]}>
@@ -99,8 +99,7 @@ const styles = StyleSheet.create({
   descriptionBox: { borderRadius: 14, padding: 14, gap: 12 },
   toggleRow: { flexDirection: 'row', borderRadius: 8, padding: 3, alignSelf: 'flex-start' },
   toggleBtn: { paddingHorizontal: 16, paddingVertical: 6, borderRadius: 6 },
-  toggleBtnActive: { backgroundColor: '#E8A876' },
-  toggleText: { fontSize: 12, fontWeight: '600', color: '#8B5E3C' },
+  toggleText: { fontSize: 12, fontWeight: '600' },
   toggleTextActive: { color: '#fff' },
   descriptionText: { fontSize: 14, lineHeight: 22 },
 })

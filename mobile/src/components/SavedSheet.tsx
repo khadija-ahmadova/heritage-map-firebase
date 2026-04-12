@@ -136,12 +136,12 @@ export default function SavedSheet({ visible, onClose, onSelectMonument, onSelec
             >
               <View style={styles.cardLeft}>
                 <Text style={[styles.cardTitle, { color: colors.text }]}>{item.title}</Text>
-                <TouchableOpacity style={styles.arrowBtn} onPress={() => handleCardPress(item.id)}>
+                <TouchableOpacity style={[styles.arrowBtn, { backgroundColor: colors.accent }]} onPress={() => handleCardPress(item.id)}>
                   <Ionicons name="arrow-forward" size={18} color="#fff" />
                 </TouchableOpacity>
               </View>
-              <View style={styles.iconCircle}>
-                <Ionicons name={item.icon as any} size={32} color="#C07040" />
+              <View style={[styles.iconCircle, { backgroundColor: colors.border }]}>
+                <Ionicons name={item.icon as any} size={32} color={colors.accent}/>
               </View>
             </TouchableOpacity>
           ))}
@@ -175,6 +175,6 @@ const styles = StyleSheet.create({
   },
   iconCircle: {
     width: 90, height: 90, borderRadius: 30,
-    backgroundColor: '#FFCFB3', marginLeft: 12, alignItems: 'center', justifyContent: 'center',
+    marginLeft: 12, alignItems: 'center', justifyContent: 'center',
   },
 })

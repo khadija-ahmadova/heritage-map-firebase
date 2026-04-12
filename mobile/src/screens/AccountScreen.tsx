@@ -35,7 +35,7 @@ export default function AccountScreen({ navigation }: any) {
 
         <View style={styles.avatarSection}>
           <View style={[styles.avatarCircle, { backgroundColor: colors.card }]}>
-            <Ionicons name="person-outline" size={48} color="#7B3A10" />
+            <Ionicons name="person-outline" size={48} color={colors.accent} />
           </View>
 
           <Text style={[styles.email, { color: colors.subtext }]}>
@@ -55,7 +55,7 @@ export default function AccountScreen({ navigation }: any) {
             <Switch
               value={isDark}
               onValueChange={toggleTheme}
-              trackColor={{ false: '#ddd', true: '#6E3606' }}
+              trackColor={{ false: '#ddd', true: colors.accent }}
               thumbColor="#fff"
             />
           </View>
@@ -70,7 +70,7 @@ export default function AccountScreen({ navigation }: any) {
             <Switch
               value={notifications}
               onValueChange={setNotifications}
-              trackColor={{ false: '#ddd', true: '#6E3606' }}
+              trackColor={{ false: '#ddd', true: colors.accent }}
               thumbColor="#fff"
             />
           </View>
@@ -85,7 +85,7 @@ export default function AccountScreen({ navigation }: any) {
             <Switch
                value={location}
                onValueChange={setLocation}
-              trackColor={{ false: '#ddd', true: '#6E3606' }}
+              trackColor={{ false: '#ddd', true: colors.accent }}
               thumbColor="#fff"
             />
           </View>
@@ -113,8 +113,8 @@ export default function AccountScreen({ navigation }: any) {
             <View style={[styles.modalDivider, { backgroundColor: colors.border }]} />
             <View style={styles.modalBody}>
               <View style={styles.modalIconRow}>
-                <Ionicons name="star" size={28} color="#7B3A10" />
-                <View style={styles.modalLogoDivider} />
+                <Ionicons name="star" size={28} color={colors.accent} />
+                <View style={[styles.modalLogoDivider, { backgroundColor: colors.accent }]} />
               </View>
               <Text style={[styles.appName, { color: colors.text }]}>Heritage Maps Baku</Text>
               <Text style={[styles.appDescription, { color: colors.subtext }]}>
