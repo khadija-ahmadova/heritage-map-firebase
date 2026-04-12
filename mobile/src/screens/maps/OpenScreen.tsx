@@ -24,6 +24,8 @@ import { useRoute } from '../../hooks/useRoute'
 import type { TravelMode } from '../../hooks/useRoute'
 import { useSaved } from '../../context/SavedContext'
 import type { SavedRoute } from '../../context/SavedContext'
+import { Fragment } from 'react'
+import { useTheme } from '../../context/ThemeContext'
 
 
 
@@ -112,17 +114,22 @@ export default function OpenScreen({ navigation }: any) {
   const { monuments, loading, error } = useMonuments()
   const { routeResult, loading: routeLoading, fetchRoute, clearRoute } = useRoute()
   const { saveRoute, pushPastRoute } = useSaved()
+  const { colors, location: locationEnabled } = useTheme()
 
   // GPS 
 
   useEffect(() => {
-    (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync()
-      if (status !== 'granted') return
-      const loc = await Location.getCurrentPositionAsync({})
-      setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude })
-    })()
-  }, [])
+  if (!locationEnabled) {
+    setUserLocation(null)
+    return
+  }
+  (async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync()
+    if (status !== 'granted') return
+    const loc = await Location.getCurrentPositionAsync({})
+    setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude })
+  })()
+  }, [locationEnabled])
 
   useEffect(() => {
     if (error) {
@@ -393,6 +400,7 @@ export default function OpenScreen({ navigation }: any) {
 
 
   return (
+  <Fragment>
     <View style={styles.container}>
       <MapView
         ref={mapRef}
@@ -413,7 +421,6 @@ export default function OpenScreen({ navigation }: any) {
           />
         )}
 
-        {/* Show a distinct marker for a geocoded address start */}
         {startAddressCoords && routeVisible && (
           <Marker
             coordinate={startAddressCoords}
@@ -446,7 +453,6 @@ export default function OpenScreen({ navigation }: any) {
         </View>
       )}
 
-      {/* Search bar */}
       <View style={styles.searchContainer}>
         <TouchableOpacity onPress={() => navigation.navigate('Account')}>
           <Avatar
@@ -455,15 +461,13 @@ export default function OpenScreen({ navigation }: any) {
             containerStyle={styles.avatar}
           />
         </TouchableOpacity>
-        <View style={styles.searchBarWrapper}>
+        <View style={[styles.searchBarWrapper, { backgroundColor: colors.background }]}>
           <TextInput
             placeholder="Search monuments or places..."
             onChangeText={handleSearchChange}
             value={search}
-            style={styles.searchInput}
-            placeholderTextColor="#999"
-            returnKeyType="search"
-            onSubmitEditing={handleSearchSubmit}
+            style={[styles.searchInput, { color: colors.text }]}
+            placeholderTextColor={colors.subtext}
           />
           {isSearching ? (
             <ActivityIndicator size="small" color="#6E3606" />
@@ -477,9 +481,8 @@ export default function OpenScreen({ navigation }: any) {
         </View>
       </View>
 
-      {/* Suggestion dropdown */}
       {showSuggestions && (
-        <View style={styles.suggestionsBox}>
+        <View style={[styles.suggestionsBox, { backgroundColor: colors.background }]}>
           <FlatList
             data={suggestions}
             keyExtractor={(_, i) => String(i)}
@@ -496,17 +499,17 @@ export default function OpenScreen({ navigation }: any) {
                   style={styles.suggestionIcon}
                 />
                 <View style={styles.suggestionTextWrap}>
-                  <Text style={styles.suggestionPrimary} numberOfLines={1}>
+                 <Text style={[styles.suggestionPrimary, { color: colors.text }]} numberOfLines={1}>
                     {item.kind === 'monument' ? item.monument.name : item.display_name.split(',')[0]}
                   </Text>
                   {item.kind === 'monument' && item.monument.location ? (
-                    <Text style={styles.suggestionSecondary} numberOfLines={1}>
+                    <Text style={[styles.suggestionSecondary, { color: colors.subtext }]} numberOfLines={1}>
                       {[item.monument.architect, item.monument.period, item.monument.location]
                         .filter(Boolean)
                         .join(' · ')}
                     </Text>
                   ) : item.kind === 'place' ? (
-                    <Text style={styles.suggestionSecondary} numberOfLines={1}>
+                    <Text style={[styles.suggestionSecondary, { color: colors.subtext }]} numberOfLines={1}>
                       {item.display_name.split(',').slice(1, 3).join(',')}
                     </Text>
                   ) : null}
@@ -549,13 +552,6 @@ export default function OpenScreen({ navigation }: any) {
         </TouchableOpacity>
       )}
 
-      <MonumentDetailSheet
-        monument={selected}
-        onClose={() => setSelected(null)}
-        onCreateRoute={handleCreateRoute}
-        onMoreInfo={(monument) => navigation.navigate('MonumentInfo', { monument })}
-      />
-
       <SavedSheet
         visible={savedOpen}
         onClose={() => setSavedOpen(false)}
@@ -591,7 +587,6 @@ export default function OpenScreen({ navigation }: any) {
         onRouteChange={(reordered, start) => {
           setRouteMonuments(reordered)
           setCurrentStart(start)
-          // If start type switched to address, kick off geocoding
           if (start.type === 'address') handleAddressStartChange(start.address ?? '')
           else setStartAddressCoords(null)
         }}
@@ -613,10 +608,19 @@ export default function OpenScreen({ navigation }: any) {
         onFilterChange={setFilteredMonumentIds}
       />
     </View>
-  )
+
+    <MonumentDetailSheet
+      monument={selected}
+      onClose={() => setSelected(null)}
+      onCreateRoute={handleCreateRoute}
+      onMoreInfo={(monument) => {
+        setSelected(null)
+        navigation.navigate('MonumentInfo', { monument })
+      }}
+    />
+  </Fragment>
+)
 }
-
-
 
 const styles = StyleSheet.create({
   container: { flex: 1 },

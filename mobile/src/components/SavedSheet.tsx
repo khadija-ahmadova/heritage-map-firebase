@@ -1,16 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react'
 import {
-  Animated,
-  Dimensions,
-  PanResponder,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+  Animated, Dimensions, PanResponder, Platform,
+  ScrollView, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { useTheme } from '../context/ThemeContext'
 import WantToVisitScreen from '../screens/WantToVisitScreen'
 import SavedRoutesScreen from '../screens/SavedRoutesScreen'
 import PastRoutesScreen from '../screens/PastRoutesScreen'
@@ -40,20 +34,15 @@ export default function SavedSheet({ visible, onClose, onSelectMonument, onSelec
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current
   const scrollOffset = useRef(0)
   const [innerScreen, setInnerScreen] = useState<InnerScreen>(null)
+  const { colors } = useTheme()
 
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, g) => g.dy > 0 && scrollOffset.current <= 0,
-      onPanResponderMove: (_, g) => {
-        if (g.dy > 0) translateY.setValue(g.dy)
-      },
+      onPanResponderMove: (_, g) => { if (g.dy > 0) translateY.setValue(g.dy) },
       onPanResponderRelease: (_, g) => {
         if (g.dy > DISMISS_THRESHOLD) {
-          Animated.timing(translateY, {
-            toValue: SHEET_HEIGHT,
-            duration: 250,
-            useNativeDriver: true,
-          }).start(onClose)
+          Animated.timing(translateY, { toValue: SHEET_HEIGHT, duration: 250, useNativeDriver: true }).start(onClose)
         } else {
           Animated.spring(translateY, { toValue: 0, useNativeDriver: true }).start()
         }
@@ -81,14 +70,10 @@ export default function SavedSheet({ visible, onClose, onSelectMonument, onSelec
   if (innerScreen === 'wantToVisit') {
     return (
       <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-        <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
+        <Animated.View style={[styles.sheet, { backgroundColor: colors.background, transform: [{ translateY }] }]}>
           <WantToVisitScreen
             onBack={() => setInnerScreen(null)}
-            onSelectMonument={(monument) => {
-              setInnerScreen(null)
-              onClose()
-              onSelectMonument?.(monument)
-            }}
+            onSelectMonument={(monument) => { setInnerScreen(null); onClose(); onSelectMonument?.(monument) }}
           />
         </Animated.View>
       </View>
@@ -98,14 +83,10 @@ export default function SavedSheet({ visible, onClose, onSelectMonument, onSelec
   if (innerScreen === 'savedRoutes') {
     return (
       <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-        <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
+        <Animated.View style={[styles.sheet, { backgroundColor: colors.background, transform: [{ translateY }] }]}>
           <SavedRoutesScreen
             onBack={() => setInnerScreen(null)}
-            onSelectRoute={(route) => {
-              setInnerScreen(null)
-              onClose()
-              onSelectRoute?.(route)
-            }}
+            onSelectRoute={(route) => { setInnerScreen(null); onClose(); onSelectRoute?.(route) }}
           />
         </Animated.View>
       </View>
@@ -115,14 +96,10 @@ export default function SavedSheet({ visible, onClose, onSelectMonument, onSelec
   if (innerScreen === 'pastRoutes') {
     return (
       <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
-        <Animated.View style={[styles.sheet, { transform: [{ translateY }] }]}>
+        <Animated.View style={[styles.sheet, { backgroundColor: colors.background, transform: [{ translateY }] }]}>
           <PastRoutesScreen
             onBack={() => setInnerScreen(null)}
-            onSelectRoute={(route) => {
-              setInnerScreen(null)
-              onClose()
-              onSelectRoute?.(route)
-            }}
+            onSelectRoute={(route) => { setInnerScreen(null); onClose(); onSelectRoute?.(route) }}
           />
         </Animated.View>
       </View>
@@ -132,41 +109,34 @@ export default function SavedSheet({ visible, onClose, onSelectMonument, onSelec
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       <Animated.View
-        style={[styles.sheet, { transform: [{ translateY }] }]}
+        style={[styles.sheet, { backgroundColor: colors.background, transform: [{ translateY }] }]}
         accessibilityViewIsModal
         {...panResponder.panHandlers}
       >
         <View style={styles.dragHandleArea}>
-          <View style={styles.dragHandle} />
+          <View style={[styles.dragHandle, { backgroundColor: colors.subtext }]} />
         </View>
-
         <ScrollView
           bounces={Platform.OS === 'ios'}
           scrollEventThrottle={16}
           onScroll={(e) => {
             scrollOffset.current = e.nativeEvent.contentOffset.y
-            if (Platform.OS === 'ios' && e.nativeEvent.contentOffset.y < -60) {
-              onClose()
-            }
+            if (Platform.OS === 'ios' && e.nativeEvent.contentOffset.y < -60) onClose()
           }}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          <Text style={styles.title}>Saved List</Text>
-
+          <Text style={[styles.title, { color: colors.text }]}>Saved List</Text>
           {SAVED_ITEMS.map((item) => (
             <TouchableOpacity
               key={item.id}
-              style={styles.card}
+              style={[styles.card, { backgroundColor: colors.card }]}
               onPress={() => handleCardPress(item.id)}
               activeOpacity={0.8}
             >
               <View style={styles.cardLeft}>
-                <Text style={styles.cardTitle}>{item.title}</Text>
-                <TouchableOpacity
-                  style={styles.arrowBtn}
-                  onPress={() => handleCardPress(item.id)}
-                >
+                <Text style={[styles.cardTitle, { color: colors.text }]}>{item.title}</Text>
+                <TouchableOpacity style={styles.arrowBtn} onPress={() => handleCardPress(item.id)}>
                   <Ionicons name="arrow-forward" size={18} color="#fff" />
                 </TouchableOpacity>
               </View>
@@ -183,81 +153,28 @@ export default function SavedSheet({ visible, onClose, onSelectMonument, onSelec
 
 const styles = StyleSheet.create({
   sheet: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: SHEET_HEIGHT,
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 12,
-    overflow: 'hidden',
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    height: SHEET_HEIGHT, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    paddingBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.1, shadowRadius: 8, elevation: 12, overflow: 'hidden',
   },
-  dragHandleArea: {
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  dragHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: '#3D3C3C',
-    borderRadius: 2,
-  },
-  scrollContent: {
-    paddingHorizontal: 24,
-    paddingBottom: 40,
-    paddingTop: 8,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: '#1a1a1a',
-    marginBottom: 30,
-  },
+  dragHandleArea: { alignItems: 'center', paddingVertical: 12 },
+  dragHandle: { width: 40, height: 4, borderRadius: 2 },
+  scrollContent: { paddingHorizontal: 24, paddingBottom: 40, paddingTop: 8 },
+  title: { fontSize: 26, fontWeight: '700', marginBottom: 30 },
   card: {
-    backgroundColor: '#FFF3EC',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
+    borderRadius: 16, padding: 16, marginBottom: 16,
+    flexDirection: 'row', alignItems: 'center',
+    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 6, elevation: 2,
   },
-  cardLeft: {
-    flex: 1,
-    justifyContent: 'space-between',
-    height: 80,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1a1a1a',
-  },
+  cardLeft: { flex: 1, justifyContent: 'space-between', height: 80 },
+  cardTitle: { fontSize: 16, fontWeight: '700' },
   arrowBtn: {
-    backgroundColor: '#574F4F',
-    borderRadius: 20,
-    width: 36,
-    height: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
+    backgroundColor: '#574F4F', borderRadius: 20,
+    width: 36, height: 36, justifyContent: 'center', alignItems: 'center', alignSelf: 'flex-start',
   },
   iconCircle: {
-    width: 90,
-    height: 90,
-    borderRadius: 30,
-    backgroundColor: '#FFCFB3',
-    marginLeft: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 90, height: 90, borderRadius: 30,
+    backgroundColor: '#FFCFB3', marginLeft: 12, alignItems: 'center', justifyContent: 'center',
   },
 })
