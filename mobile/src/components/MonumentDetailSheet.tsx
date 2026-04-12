@@ -1,16 +1,10 @@
 import React, { useEffect, useRef } from 'react'
 import {
-  Animated,
-  Dimensions,
-  PanResponder,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+  Animated, Dimensions, PanResponder, Platform,
+  ScrollView, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { useTheme } from '../context/ThemeContext'
 import type { Monument } from '../hooks/useMonuments'
 import { useSaved } from '../context/SavedContext'
 
@@ -29,20 +23,15 @@ export default function MonumentDetailSheet({ monument, onClose, onCreateRoute, 
   const translateY = useRef(new Animated.Value(SHEET_HEIGHT)).current
   const scrollOffset = useRef(0)
   const { saveMonument, unsaveMonument, isSaved } = useSaved()
+  const { colors } = useTheme()
 
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, g) => g.dy > 0 && scrollOffset.current <= 0,
-      onPanResponderMove: (_, g) => {
-        if (g.dy > 0) translateY.setValue(g.dy)
-      },
+      onPanResponderMove: (_, g) => { if (g.dy > 0) translateY.setValue(g.dy) },
       onPanResponderRelease: (_, g) => {
         if (g.dy > DISMISS_THRESHOLD) {
-          Animated.timing(translateY, {
-            toValue: SHEET_HEIGHT,
-            duration: 250,
-            useNativeDriver: true,
-          }).start(onClose)
+          Animated.timing(translateY, { toValue: SHEET_HEIGHT, duration: 250, useNativeDriver: true }).start(onClose)
         } else {
           Animated.spring(translateY, { toValue: 0, useNativeDriver: true }).start()
         }
@@ -52,17 +41,9 @@ export default function MonumentDetailSheet({ monument, onClose, onCreateRoute, 
 
   useEffect(() => {
     if (monument) {
-      Animated.timing(translateY, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start()
+      Animated.timing(translateY, { toValue: 0, duration: 300, useNativeDriver: true }).start()
     } else {
-      Animated.timing(translateY, {
-        toValue: SHEET_HEIGHT,
-        duration: 250,
-        useNativeDriver: true,
-      }).start()
+      Animated.timing(translateY, { toValue: SHEET_HEIGHT, duration: 250, useNativeDriver: true }).start()
     }
   }, [monument, translateY])
 
@@ -71,11 +52,8 @@ export default function MonumentDetailSheet({ monument, onClose, onCreateRoute, 
   const saved = isSaved(monument.id)
 
   const handleSaveToggle = () => {
-    if (saved) {
-      unsaveMonument(monument.id)
-    } else {
-      saveMonument(monument)
-    }
+    if (saved) unsaveMonument(monument.id)
+    else saveMonument(monument)
   }
 
   const previewText = [
@@ -85,20 +63,17 @@ export default function MonumentDetailSheet({ monument, onClose, onCreateRoute, 
     monument.description
       ? monument.description.split(/(?<=[.!?])\s+/).slice(0, 2).join(' ')
       : null,
-  ]
-    .filter(Boolean)
-    .join('\n\n')
+  ].filter(Boolean).join('\n\n')
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
       <Animated.View
-        style={[styles.sheet, { transform: [{ translateY }] }]}
+        style={[styles.sheet, { backgroundColor: colors.background, transform: [{ translateY }] }]}
         accessibilityViewIsModal
         {...panResponder.panHandlers}
       >
-        {/* Drag handle */}
         <View style={styles.dragHandleArea}>
-          <View style={styles.dragHandle} />
+          <View style={[styles.dragHandle, { backgroundColor: colors.subtext }]} />
         </View>
 
         <ScrollView
@@ -106,59 +81,50 @@ export default function MonumentDetailSheet({ monument, onClose, onCreateRoute, 
           scrollEventThrottle={16}
           onScroll={(e) => {
             scrollOffset.current = e.nativeEvent.contentOffset.y
-            if (Platform.OS === 'ios' && e.nativeEvent.contentOffset.y < -60) {
-              onClose()
-            }
+            if (Platform.OS === 'ios' && e.nativeEvent.contentOffset.y < -60) onClose()
           }}
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          {/* Image placeholder */}
           <View style={styles.imagePlaceholder} />
 
-          {/* Title */}
-          <Text style={styles.title}>{monument.name}</Text>
+          <Text style={[styles.title, { color: colors.text }]}>{monument.name}</Text>
 
-          {/* Action buttons */}
           <View style={styles.actionRow}>
             <View style={styles.actionButtonWrapper}>
               <TouchableOpacity
-                style={[styles.actionButton, saved && styles.actionButtonActive]}
-                accessibilityLabel={saved ? 'Unsave monument' : 'Save monument'}
+                style={[styles.actionButton, { backgroundColor: saved ? colors.accentSecondary : colors.accentSecondary }, saved && styles.actionButtonActive]}
                 onPress={handleSaveToggle}
               >
-                <Ionicons
-                  name={saved ? 'bookmark' : 'bookmark-outline'}
-                  size={22}
-                  color="#FFFFFF"
-                />
+                <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={22} color="#FFFFFF" />
               </TouchableOpacity>
-              <Text style={styles.actionLabel}>Save</Text>
+              <Text style={[styles.actionLabel, { color: colors.subtext }]}>Save</Text>
             </View>
 
             <View style={styles.actionButtonWrapper}>
-              <TouchableOpacity style={styles.actionButton} accessibilityLabel="Share monument">
+              <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.accentSecondary }]}>
                 <Ionicons name="share-social-outline" size={22} color="#FFFFFF" />
               </TouchableOpacity>
-              <Text style={styles.actionLabel}>Share</Text>
+              <Text style={[styles.actionLabel, { color: colors.subtext }]}>Share</Text>
             </View>
 
             <View style={styles.actionButtonWrapper}>
               <TouchableOpacity
-                style={styles.actionButton}
-                accessibilityLabel="Create route"
+                style={[styles.actionButton, { backgroundColor: colors.accentSecondary }]}
                 onPress={() => onCreateRoute(monument)}
               >
                 <Ionicons name="add-circle-outline" size={22} color="#FFFFFF" />
               </TouchableOpacity>
-              <Text style={styles.actionLabel}>Add to Route</Text>
+              <Text style={[styles.actionLabel, { color: colors.subtext }]}>Add to Route</Text>
             </View>
           </View>
 
-          {/* Details + description box */}
-          <View style={styles.detailsBox}>
-            <Text style={styles.previewText }>{previewText }</Text>
-            <TouchableOpacity style={styles.arrowButton} accessibilityLabel="More info" onPress={() => onMoreInfo(monument)}>
+          <View style={[styles.detailsBox, { backgroundColor: colors.card }]}>
+            <Text style={[styles.previewText, { color: colors.text }]}>{previewText}</Text>
+            <TouchableOpacity
+              style={[styles.arrowButton, { backgroundColor: colors.accentSecondary }]}
+              onPress={() => onMoreInfo(monument)}
+            >
               <Ionicons name="arrow-forward" size={18} color="white" />
             </TouchableOpacity>
           </View>
@@ -170,93 +136,26 @@ export default function MonumentDetailSheet({ monument, onClose, onCreateRoute, 
 
 const styles = StyleSheet.create({
   sheet: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: SHEET_HEIGHT,
-    backgroundColor: '#FFF3EC',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    paddingBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 12,
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    height: SHEET_HEIGHT, borderTopLeftRadius: 24, borderTopRightRadius: 24,
+    paddingBottom: 16, shadowColor: '#000', shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.1, shadowRadius: 8, elevation: 12,
   },
-  dragHandleArea: {
-    alignItems: 'center',
-    paddingVertical: 12,
-  },
-  dragHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: '#3D3C3C',
-    borderRadius: 2,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 24,
-  },
-  imagePlaceholder: {
-    height: 150,
-    backgroundColor: '#3D2B1F',
-    borderRadius: 12,
-    marginBottom: 14,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#1A1A1A',
-    marginBottom: 12,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    gap: 25,
-    marginBottom: 14,
-  },
-  actionButtonWrapper: {
-    alignItems: 'center',
-    gap: 4,
-  },
-  actionButton: {
-    width: 50,
-    height: 50,
-    backgroundColor: '#E8A876',
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  actionButtonActive: {
-    backgroundColor: '#C97B3E',
-  },
-  actionLabel: {
-    fontSize: 11,
-    color: '#3D2B1F',
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  detailsBox: {
-    backgroundColor: '#FFE2D2',
-    borderRadius: 12,
-    padding: 14,
-    paddingBottom: 52,
-  },
-  previewText : {
-    fontSize: 13,
-    color: '#3D2B1F',
-    lineHeight: 20,
-  },
+  dragHandleArea: { alignItems: 'center', paddingVertical: 12 },
+  dragHandle: { width: 40, height: 4, borderRadius: 2 },
+  scrollContent: { paddingHorizontal: 16, paddingBottom: 24 },
+  imagePlaceholder: { height: 150, backgroundColor: '#3D2B1F', borderRadius: 12, marginBottom: 14 },
+  title: { fontSize: 20, fontWeight: '700', marginBottom: 12 },
+  actionRow: { flexDirection: 'row', gap: 25, marginBottom: 14 },
+  actionButtonWrapper: { alignItems: 'center', gap: 4 },
+  actionButton: { width: 50, height: 50, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  actionButtonActive: { opacity: 0.8 },
+  actionLabel: { fontSize: 11, fontWeight: '500', textAlign: 'center' },
+  detailsBox: { borderRadius: 12, padding: 14, paddingBottom: 52 },
+  previewText: { fontSize: 13, lineHeight: 20 },
   arrowButton: {
-    position: 'absolute',
-    bottom: 12,
-    right: 12,
-    width: 36,
-    height: 36,
-    backgroundColor: '#E8A876',
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
+    position: 'absolute', bottom: 12, right: 12,
+    width: 36, height: 36, borderRadius: 18,
+    alignItems: 'center', justifyContent: 'center',
   },
 })
