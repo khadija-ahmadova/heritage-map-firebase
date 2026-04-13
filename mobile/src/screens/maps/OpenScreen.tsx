@@ -26,6 +26,8 @@ import { useSaved } from '../../context/SavedContext'
 import type { SavedRoute } from '../../context/SavedContext'
 import { Fragment } from 'react'
 import { useTheme } from '../../context/ThemeContext'
+import { useProximityNotifications } from '../../hooks/useProximityNotifications'
+import * as Notifications from 'expo-notifications'
 
 
 
@@ -137,20 +139,49 @@ export default function OpenScreen({ navigation }: any) {
   const { routeResult, loading: routeLoading, fetchRoute, clearRoute } = useRoute()
   const { saveRoute, pushPastRoute } = useSaved()
   const { colors, isDark, location: locationEnabled } = useTheme()
+  const { notifications } = useTheme()   
+  useProximityNotifications(userLocation, monuments, notifications && locationEnabled)
+
+  useEffect(() => {
+  const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+    const monumentId = response.notification.request.content.data?.monumentId as string | undefined
+    if (!monumentId) return
+
+    const monument = monuments.find((m) => m.id === monumentId)
+    if (!monument) return
+
+    // Fly to it and open the detail sheet
+    mapRef.current?.animateToRegion(
+      { ...monument.coordinates, latitudeDelta: 0.01, longitudeDelta: 0.01 },
+      600
+    )
+    setSelected(monument)
+  })
+
+  return () => subscription.remove()
+}, [monuments])
 
   // GPS 
 
   useEffect(() => {
-  if (!locationEnabled) {
-    setUserLocation(null)
-    return
-  }
-  (async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync()
-    if (status !== 'granted') return
-    const loc = await Location.getCurrentPositionAsync({})
-    setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude })
-  })()
+    if (!locationEnabled) {
+      setUserLocation(null)
+      return
+    }
+    let subscriber: Location.LocationSubscription | null = null
+    ;(async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync()
+      if (status !== 'granted') return
+      // Get an immediate fix first
+      const loc = await Location.getCurrentPositionAsync({})
+      setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude })
+      // Then keep watching
+      subscriber = await Location.watchPositionAsync(
+        { accuracy: Location.Accuracy.Balanced, distanceInterval: 30 },
+        (loc) => setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude })
+      )
+    })()
+    return () => { subscriber?.remove() }
   }, [locationEnabled])
 
   useEffect(() => {

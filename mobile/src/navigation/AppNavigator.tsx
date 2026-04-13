@@ -1,4 +1,5 @@
 import React from 'react'
+import { useEffect } from 'react'
 import { NavigationContainer } from '@react-navigation/native'
 import { createNativeStackNavigator } from '@react-navigation/native-stack'
 import LoginScreen from '../screens/auth/LoginScreen'
@@ -9,10 +10,26 @@ import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen'
 import { SavedProvider } from '../context/SavedContext'
 import MonumentInfoScreen from '../screens/MonumentInfoScreen'
 import { ThemeProvider } from '../context/ThemeContext'
+import * as Notifications from 'expo-notifications'  
+
 
 const Stack = createNativeStackNavigator()
 
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+})
+
 export default function AppNavigator() {
+  
+  useEffect(() => {
+    Notifications.requestPermissionsAsync()
+  }, [])
   return (
     <ThemeProvider>
       <SavedProvider>
