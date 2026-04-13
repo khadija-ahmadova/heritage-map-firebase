@@ -35,7 +35,6 @@ const MonumentPageHeader = () => {
         {/* Navigation */}
         <nav className="hidden md:flex items-center gap-8">
           <Link to="/" className={linkClass}>Home</Link>
-          <Link to="/advanced-search" className={linkClass}>Advanced Search</Link>
 
           {!loading && (
             user ? (

@@ -47,7 +47,6 @@ const Header = () => {
         {/* Navigation */}
         <nav className="hidden md:flex items-center gap-8">
           <Link to="/" className={linkClass}>Home</Link>
-          <Link to="/advanced-search" className={linkClass}>Advanced Search</Link>
 
           {/* Don't render auth buttons while Firebase is restoring the session */}
           {!loading && (
