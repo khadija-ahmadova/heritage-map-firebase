@@ -4,7 +4,7 @@
  * Authenticated landing page. Shows:
  * - Narrow hero image with welcome text overlay (matches landing page style)
  * - Horizontally scrollable row of saved monument cards
- * - Two large buttons: Saved Routes (→ /search-by-style with RoutePanel)
+ * - Two large buttons: Saved Routes
  *   and Past Routes (placeholder, coming soon)
  *
  * Data:
@@ -219,7 +219,7 @@ export default function DashboardPage() {
  
         <div className="flex gap-3">
           <RouteButton
-            to="/search-by-style"
+            to="/saved-routes"
             title="Saved routes"
             subtitle="View on map"
             icon={

@@ -4,11 +4,17 @@
 //   1. Wrap the entire app in <AuthProvider> so every component can call useAuth()
 //   2. Declare all client-side routes (URL → component mappings)
 //
+//
 // Route structure:
-//   /              → LandingPage (public)
-//   /signin        → SignInPage (public; redirect to /dashboard if already logged in)
-//   /register      → RegisterPage (public)
-//   /dashboard     → DashboardPage (protected — requires login)
+//   /                    → LandingPage           (Layout)
+//   /dashboard           → DashboardPage         (Layout, protected)
+//   /monument/:id        → MonumentDetailPage    (own header)
+//   /saved-routes        → SavedRoutesPage       (protected, own layout)
+//   /signin              → SignInPage            (no header)
+//   /register            → RegisterPage          (no header)
+//   /search-by-architect → ArchitectSearchPage
+//   /search-by-period    → PeriodSearchPage
+//   /search-by-style     → StyleSearchPage
 
 import './index.css'
 import { Route, Routes, Navigate } from 'react-router-dom'
@@ -24,6 +30,7 @@ import SearchByStylePage from './pages/StyleSearchPage'
 import MonumentDetailPage from './pages/MonumentDetailPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import SearchbyPeriodPage from './pages/PeriodSearchPage'
+import SavedRoutesPage from './pages/SavedRoutesPage'
 
 // PublicOnlyRoute — the mirror of ProtectedRoute.
 // If the user is already logged in, redirect them away from /signin and /register
@@ -54,6 +61,17 @@ function App() {
         </Route>
 
         <Route path="/monument/:id" element={<MonumentDetailPage />}/>
+
+        {/* ── Saved routes — own full-screen split layout ── */}
+        <Route
+          path="/saved-routes"
+          element={
+            <ProtectedRoute>
+              <SavedRoutesPage />
+            </ProtectedRoute>
+          }
+        />
+
 
         {/* Auth pages — full-screen, no Header/Footer */}
         <Route

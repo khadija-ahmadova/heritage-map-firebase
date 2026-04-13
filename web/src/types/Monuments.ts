@@ -40,7 +40,7 @@ import type { GeoPoint } from "firebase/firestore"
 export interface Monuments {
     id: string
     name: string
-    style: string
+    style?: string
     architect: string
     location: string
     period: string
