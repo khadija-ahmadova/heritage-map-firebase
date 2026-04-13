@@ -41,7 +41,28 @@ const MODE_COLORS: Record<TravelMode, string> = {
   'driving-car': '#E8341C',
   'cycling-regular': '#3DAE6E',
 }
-
+const DARK_MAP_STYLE = [
+  { elementType: 'geometry', stylers: [{ color: '#212121' }] },
+  { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#212121' }] },
+  { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#757575' }] },
+  { featureType: 'administrative.country', elementType: 'labels.text.fill', stylers: [{ color: '#9e9e9e' }] },
+  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#bdbdbd' }] },
+  { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#181818' }] },
+  { featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
+  { featureType: 'poi.park', elementType: 'labels.text.stroke', stylers: [{ color: '#1b1b1b' }] },
+  { featureType: 'road', elementType: 'geometry.fill', stylers: [{ color: '#2c2c2c' }] },
+  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#8a8a8a' }] },
+  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#373737' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#3c3c3c' }] },
+  { featureType: 'road.highway.controlled_access', elementType: 'geometry', stylers: [{ color: '#4e4e4e' }] },
+  { featureType: 'road.local', elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
+  { featureType: 'transit', elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#000000' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#3d3d3d' }] },
+]
 
 
 type SearchSuggestion =
@@ -105,6 +126,7 @@ export default function OpenScreen({ navigation }: any) {
   // can show a "located" indicator without doing async work itself
   const [startAddressCoords, setStartAddressCoords] = useState<{ latitude: number; longitude: number } | null>(null)
 
+
   const mapRef = useRef<MapView>(null)
   const routeActiveRef = useRef(false)
   useEffect(() => { routeActiveRef.current = routeVisible || routeConfirmed }, [routeVisible, routeConfirmed])
@@ -114,7 +136,7 @@ export default function OpenScreen({ navigation }: any) {
   const { monuments, loading, error } = useMonuments()
   const { routeResult, loading: routeLoading, fetchRoute, clearRoute } = useRoute()
   const { saveRoute, pushPastRoute } = useSaved()
-  const { colors, location: locationEnabled } = useTheme()
+  const { colors, isDark, location: locationEnabled } = useTheme()
 
   // GPS 
 
@@ -403,12 +425,14 @@ export default function OpenScreen({ navigation }: any) {
   <Fragment>
     <View style={styles.container}>
       <MapView
+        key={isDark ? 'dark' : 'light'}
         ref={mapRef}
         style={StyleSheet.absoluteFill}
         mapType="standard"
         initialRegion={BAKU_REGION}
         showsUserLocation
         showsMyLocationButton={false}
+        customMapStyle={isDark ? DARK_MAP_STYLE : []}
         onPress={() => {
           if (showSuggestions) setSuggestions([])
         }}
@@ -495,7 +519,7 @@ export default function OpenScreen({ navigation }: any) {
                 <Ionicons
                   name={item.kind === 'monument' ? 'business-outline' : 'location-outline'}
                   size={16}
-                  color={item.kind === 'monument' ? colors.accent : '#888'}
+                  color={item.kind === 'monument' ? colors.accentSecondary : '#888'}
                   style={styles.suggestionIcon}
                 />
                 <View style={styles.suggestionTextWrap}>
@@ -515,8 +539,8 @@ export default function OpenScreen({ navigation }: any) {
                   ) : null}
                 </View>
                 {item.kind === 'monument' && (
-                  <View style={[styles.monumentBadge, { backgroundColor: colors.subtext }]}>
-                    <Text style={[styles.monumentBadgeText, { color: colors.accent }]}>Monument</Text>
+                  <View style={[styles.monumentBadge, { backgroundColor: colors.border }]}>
+                    <Text style={[styles.monumentBadgeText, { color: colors.accent}]}>Monument</Text>
                   </View>
                 )}
               </TouchableOpacity>

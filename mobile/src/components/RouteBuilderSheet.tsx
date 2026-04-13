@@ -414,8 +414,8 @@ export default function RouteBuilderSheet({
 
         {isAddingStop && (
           <View style={styles.banner}>
-            <Ionicons name="information-circle-outline" size={16} color={colors.accent} />
-              <Text style={[styles.bannerText, { color: colors.accent }]}>Tap a marker on the map to add a stop</Text>
+            <Ionicons name="information-circle-outline" size={16} color={colors.accentSecondary} />
+              <Text style={[styles.bannerText, { color: colors.accentSecondary }]}>Tap a marker on the map to add a stop</Text>
           </View>
         )}
 
