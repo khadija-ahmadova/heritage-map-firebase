@@ -7,6 +7,9 @@ import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '../context/ThemeContext'
 import type { Monument } from '../hooks/useMonuments'
 import { useSaved } from '../context/SavedContext'
+import { Share } from 'react-native'
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { db } from '../lib/firebase'
 
 interface Props {
   monument: Monument | null
@@ -56,6 +59,20 @@ export default function MonumentDetailSheet({ monument, onClose, onCreateRoute, 
     else saveMonument(monument)
   }
 
+  const handleShare = async () => {
+  try {
+    const ref = await addDoc(collection(db, 'shares'), {
+      monumentId: monument.id,
+      createdAt: serverTimestamp(),
+    })
+    await Share.share({
+      message: `Check out ${monument.name}:\nhttps://yourapp.com/share/${ref.id}`,
+    })
+  } catch (e) {
+    console.error('Share failed', e)
+  }
+}
+
   const previewText = [
     monument.period ? `Period: ${monument.period}` : null,
     monument.architect ? `Architect: ${monument.architect}` : null,
@@ -102,7 +119,7 @@ export default function MonumentDetailSheet({ monument, onClose, onCreateRoute, 
             </View>
 
             <View style={styles.actionButtonWrapper}>
-              <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.accentSecondary }]}>
+              <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.accentSecondary }]} onPress={handleShare}>
                 <Ionicons name="share-social-outline" size={22} color="#FFFFFF" />
               </TouchableOpacity>
               <Text style={[styles.actionLabel, { color: colors.subtext }]}>Share</Text>

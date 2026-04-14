@@ -24,6 +24,7 @@ import SearchByStylePage from './pages/StyleSearchPage'
 import MonumentDetailPage from './pages/MonumentDetailPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import SearchbyPeriodPage from './pages/PeriodSearchPage'
+import SharePage from './pages/SharePage'
 
 // PublicOnlyRoute — the mirror of ProtectedRoute.
 // If the user is already logged in, redirect them away from /signin and /register
@@ -88,7 +89,7 @@ function App() {
         {/* Monument detail */}
         <Route path="/monument/:id" element={<MonumentDetailPage />}/>
 
-
+        <Route path="/share/:shareId" element={<SharePage />} />
         {/* Catch-all — any unknown URL redirects to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
