@@ -28,6 +28,7 @@ import SubmitMonumentPage from './pages/SubmitMonumentPage'
 import MyContributionsPage from './pages/MyContributionsPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import SearchbyPeriodPage from './pages/PeriodSearchPage'
+import SharePage from './pages/SharePage'
 
 // PublicOnlyRoute — the mirror of ProtectedRoute.
 // If the user is already logged in, redirect them away from /signin and /register
@@ -92,6 +93,7 @@ function App() {
         {/* Monument detail */}
         <Route path="/monument/:id" element={<MonumentDetailPage />}/>
 
+        <Route path="/share/:shareId" element={<SharePage />} />
         {/* Researcher contribution form */}
         <Route
           path="/contribute/:id"
