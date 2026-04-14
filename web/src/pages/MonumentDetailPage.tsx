@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, setDoc, deleteDoc, getDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from '../lib/firebase'
 import { getMonumentById } from '../services/monumentsService'
 import type { Monuments } from '../types/Monuments'
@@ -15,11 +15,13 @@ export default function MonumentDetailPage() {
   const [loading, setLoading] = useState(true)
   const [saved, setSaved] = useState(false)
   const [showToast, setShowToast] = useState(false)
+  const [toastMessage, setToastMessage] = useState('')
   const [readerLevel, setReaderLevel] = useState<ReaderLevel>('simplified')
   const [showReaderDropdown, setShowReaderDropdown] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // Fetch monument data
   useEffect(() => {
     if (!id) return
     getMonumentById(id)
@@ -27,6 +29,19 @@ export default function MonumentDetailPage() {
       .finally(() => setLoading(false))
   }, [id])
 
+
+  // Check if this monument is already saved by the current user
+  useEffect(() => {
+    const user = auth.currentUser
+    if (!user || !id) return
+ 
+    const savedRef = doc(db, 'saved_landmarks', `${user.uid}_${id}`)
+    getDoc(savedRef).then((snap) => {
+      setSaved(snap.exists())
+    })
+  }, [id])
+
+  //  Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -37,13 +52,15 @@ export default function MonumentDetailPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
+  // Clean up toast timer on unmount
   useEffect(() => {
     return () => {
       if (toastTimer.current) clearTimeout(toastTimer.current)
     }
   }, [])
 
-  function triggerToast() {
+  function triggerToast(message: string) {
+    setToastMessage(message)
     setShowToast(true)
     if (toastTimer.current) clearTimeout(toastTimer.current)
     toastTimer.current = setTimeout(() => setShowToast(false), 3000)
@@ -55,7 +72,7 @@ export default function MonumentDetailPage() {
 
     if (!saved) {
       setSaved(true)
-      triggerToast()
+      triggerToast('Added to Saved Articles')
       if (user) {
         await setDoc(doc(db, 'saved_landmarks', `${user.uid}_${monument.id}`), {
           user_uid: user.uid,
@@ -65,7 +82,7 @@ export default function MonumentDetailPage() {
       }
     } else {
       setSaved(false)
-      setShowToast(false)
+      triggerToast('Removed from Saved Articles')
       if (user) {
         await deleteDoc(doc(db, 'saved_landmarks', `${user.uid}_${monument.id}`))
       }
@@ -112,7 +129,7 @@ export default function MonumentDetailPage() {
             <div className="flex items-center gap-2 relative">
               {showToast && (
                 <span className="absolute right-full mr-3 whitespace-nowrap bg-gray-800 text-white text-xs font-medium px-3 py-1.5 rounded-full">
-                  Added to &quot;Saved Articles&quot;
+                  {toastMessage}
                 </span>
               )}
 
@@ -221,12 +238,22 @@ export default function MonumentDetailPage() {
 
           {/* ── Article body ── */}
           <div className="bg-white rounded-2xl px-8 py-8">
-            {monument.description ? (
-              <p className="text-gray-700 text-base leading-relaxed">
-                {monument.description}
-              </p>
+            {readerLevel === 'simplified' ? (
+              monument.simplified_desc ? (
+                <p className="text-gray-700 text-base leading-relaxed">
+                  {monument.simplified_desc}
+                </p>
+              ) : (
+                <p className="text-gray-400 text-sm italic">No simplified description available.</p>
+              )
             ) : (
-              <p className="text-gray-400 text-sm italic">No description available.</p>
+              monument.description ? (
+                <p className="text-gray-700 text-base leading-relaxed">
+                  {monument.description}
+                </p>
+              ) : (
+                <p className="text-gray-400 text-sm italic">No description available.</p>
+              )
             )}
           </div>
 
