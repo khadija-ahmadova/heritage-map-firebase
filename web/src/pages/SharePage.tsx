@@ -6,6 +6,7 @@ import ShareMapView from '../components/map/ShareMapView'
 
 export default function SharePage() {
   const { shareId } = useParams<{ shareId: string }>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [monument, setMonument] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
