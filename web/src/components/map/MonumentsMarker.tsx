@@ -39,9 +39,10 @@ import BuildingPopup from "./MonumentsPopup";
 
 interface Props {
     monuments: Monuments
+    showRouteButton: boolean
 }
 
-const MonumentsMarker = ({ monuments}: Props) => {
+const MonumentsMarker = ({ monuments, showRouteButton}: Props) => {
     const coords = monuments.coordinates;
 
     if (!coords){
@@ -51,7 +52,10 @@ const MonumentsMarker = ({ monuments}: Props) => {
     return (
         <Marker position={[coords.latitude, coords.longitude]}>
             <Popup>
-                <BuildingPopup monuments={monuments}/>
+                <BuildingPopup 
+                    monuments={monuments}
+                    showRouteButton={showRouteButton}
+                />
             </Popup>
         </Marker>
     )

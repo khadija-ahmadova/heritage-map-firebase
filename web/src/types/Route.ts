@@ -18,6 +18,7 @@
  */
 
 import type { Monuments } from "./Monuments";
+import type { TransportMode } from "../context/RouteContext";
 
 /** A single stop in the in-memory route (after joining monument data) */
 export interface RouteStop {
@@ -27,15 +28,23 @@ export interface RouteStop {
 
 /** The raw Firestore document shape for a saved route */
 export interface SavedRouteDoc {
-  userId: string;
-  name: string;
-  monumentIds: string[]; // ordered
-  createdAt: Date;
+  user_uid: string;
+  title: string;
+  mode: string;
+  distanceKm: number;
+  durationMin: number;
+  shareToken: string;
+  landmarks: unknown[];
+  creation_time: unknown;
 }
 
 /** The fully resolved route (used in UI after joining monument data) */
 export interface ResolvedRoute {
-  id: string;           // Firestore document ID
+  id: string;
   name: string;
   stops: RouteStop[];
+  shareToken: string | null;
+  mode: TransportMode;
+  distanceKm: number;
+  durationMin: number;
 }

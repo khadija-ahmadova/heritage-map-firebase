@@ -31,6 +31,7 @@ import MonumentDetailPage from './pages/MonumentDetailPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import SearchbyPeriodPage from './pages/PeriodSearchPage'
 import SavedRoutesPage from './pages/SavedRoutesPage'
+import { RouteProvider } from './context/RouteContext'
 
 // PublicOnlyRoute — the mirror of ProtectedRoute.
 // If the user is already logged in, redirect them away from /signin and /register
@@ -43,64 +44,61 @@ function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
-    // AuthProvider must be an ancestor of everything that calls useAuth()
     <AuthProvider>
-      <Routes>
-        {/* Pages that use the shared Header + Footer shell */}
-        <Route element={<Layout />}>
-          <Route path="/" element={<LandingPage />} />
-          <Route 
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
-          
-        />
-        </Route>
+      <RouteProvider>
+        <Routes>
+          {/* Layout routes */}
+          <Route element={<Layout />}>
+            <Route path="/" element={<LandingPage />} />
+            <Route 
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <DashboardPage />
+                </ProtectedRoute>
+              }
+            />
+          </Route>
 
-        <Route path="/monument/:id" element={<MonumentDetailPage />}/>
+          {/* Standalone pages */}
+          <Route path="/monument/:id" element={<MonumentDetailPage />} />
 
-        {/* ── Saved routes — own full-screen split layout ── */}
-        <Route
-          path="/saved-routes"
-          element={
-            <ProtectedRoute>
-              <SavedRoutesPage />
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/saved-routes"
+            element={
+              <ProtectedRoute>
+                <SavedRoutesPage />
+              </ProtectedRoute>
+            }
+          />
 
+          {/* Auth */}
+          <Route
+            path="/signin"
+            element={
+              <PublicOnlyRoute>
+                <SignInPage />
+              </PublicOnlyRoute>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <PublicOnlyRoute>
+                <RegisterPage />
+              </PublicOnlyRoute>
+            }
+          />
 
-        {/* Auth pages — full-screen, no Header/Footer */}
-        <Route
-          path="/signin"
-          element={
-            <PublicOnlyRoute>
-              <SignInPage />
-            </PublicOnlyRoute>
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <PublicOnlyRoute>
-              <RegisterPage />
-            </PublicOnlyRoute>
-          }
-        />
+          {/* Search */}
+          <Route path="/search-by-architect" element={<SearchByArcitectPage />} />
+          <Route path="/search-by-period" element={<SearchbyPeriodPage />} />
+          <Route path="/search-by-style" element={<SearchByStylePage />} />
 
-        {/* Protected pages — require login */}
-
-        {/* Search Filters */}
-        <Route path="/search-by-architect" element={<SearchByArcitectPage />}/>
-        <Route path="/search-by-period" element={<SearchbyPeriodPage/>}/>
-        <Route path="/search-by-style" element={<SearchByStylePage/>}/>
-
-        {/* Catch-all — any unknown URL redirects to home */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </RouteProvider>
     </AuthProvider>
   )
 }
