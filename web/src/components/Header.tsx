@@ -13,7 +13,7 @@ import { signOut } from "../lib/auth";
 
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);
-  const { user, loading } = useAuth();
+  const { user, role, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -55,6 +55,15 @@ const Header = () => {
               // Logged-in state
               <>
                 <Link to="/dashboard" className={linkClass}>Dashboard</Link>
+                {role === 'researcher' && (
+                  <>
+                    <Link to="/submit-monument" className={linkClass}>Submit entry</Link>
+                    <Link to="/my-contributions" className={linkClass}>My contributions</Link>
+                  </>
+                )}
+                {role === 'moderator' && (
+                  <Link to="/moderator" className={linkClass}>Moderation</Link>
+                )}
                 <button onClick={handleSignOut} className={buttonClass}>
                   Sign out
                 </button>

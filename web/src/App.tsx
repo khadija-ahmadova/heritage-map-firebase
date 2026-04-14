@@ -22,6 +22,10 @@ import DashboardPage from './pages/DashboardPage'
 import SearchByArcitectPage from './pages/ArchitectSearchPage'
 import SearchByStylePage from './pages/StyleSearchPage'
 import MonumentDetailPage from './pages/MonumentDetailPage'
+import ContributePage from './pages/ContributePage'
+import ModeratorPage from './pages/ModeratorPage'
+import SubmitMonumentPage from './pages/SubmitMonumentPage'
+import MyContributionsPage from './pages/MyContributionsPage'
 import ProtectedRoute from './components/ProtectedRoute'
 import SearchbyPeriodPage from './pages/PeriodSearchPage'
 import SharePage from './pages/SharePage'
@@ -90,6 +94,46 @@ function App() {
         <Route path="/monument/:id" element={<MonumentDetailPage />}/>
 
         <Route path="/share/:shareId" element={<SharePage />} />
+        {/* Researcher contribution form */}
+        <Route
+          path="/contribute/:id"
+          element={
+            <ProtectedRoute requiredRole="researcher">
+              <ContributePage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Moderator review queue */}
+        <Route
+          path="/moderator"
+          element={
+            <ProtectedRoute requiredRole="moderator">
+              <ModeratorPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Researcher: submit new monument */}
+        <Route
+          path="/submit-monument"
+          element={
+            <ProtectedRoute requiredRole="researcher">
+              <SubmitMonumentPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Researcher: view own contributions */}
+        <Route
+          path="/my-contributions"
+          element={
+            <ProtectedRoute requiredRole="researcher">
+              <MyContributionsPage />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Catch-all — any unknown URL redirects to home */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
