@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 16, paddingVertical: 12,
+    paddingHorizontal: 16, paddingVertical: 12, marginTop: 30, 
   },
   headerTitle: { fontSize: 16, fontWeight: '600' },
   backButton: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
