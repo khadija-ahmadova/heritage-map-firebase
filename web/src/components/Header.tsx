@@ -4,7 +4,7 @@
 //   - Transparent with white text when at the top of the page
 //   - Bordeaux background when scrolled past 50px
 //   - Shows "Sign in" / "Register" buttons when logged out
-//   - Shows "Dashboard" + "Sign out" when logged in
+//   - Shows "Dashboard" + "Build Route" + "Sign out" when logged in
 
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -54,6 +54,12 @@ const Header = () => {
               // Logged-in state
               <>
                 <Link to="/dashboard" className={linkClass}>Dashboard</Link>
+                <Link
+                  to="/search-by-architect?mode=route"
+                  className={linkClass}
+                >
+                  Build Route
+                </Link>
                 <button onClick={handleSignOut} className={buttonClass}>
                   Sign out
                 </button>

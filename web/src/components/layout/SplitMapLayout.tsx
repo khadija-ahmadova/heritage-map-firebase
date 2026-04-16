@@ -5,6 +5,7 @@ import type { Monuments } from "../../types/Monuments";
 import type { FilterField } from "../../types/Filters";
 import { RouteProvider } from "../../context/RouteContext";
 import RouteBuilderPanel from "../route/RouteBuilderPanel";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 interface Props {
   children: (props: {
@@ -22,7 +23,25 @@ interface Props {
 const SplitMapLayoutContent = ({ children, filteredField }: Props) => {
   const [selectedFilter, setSelectedFilter] = useState<string | null>(null);
   const [activeMonument, setActiveMonument] = useState<Monuments | null>(null);
-  const [buildingRoute, setBuildingRoute] = useState(false);
+  const [searchParams] = useSearchParams();
+
+  const initialMode = searchParams.get("mode") === "route";
+
+  const [buildingRoute, setBuildingRoute] = useState(initialMode);
+
+  const navigate = useNavigate();
+
+const toggleRouteMode = () => {
+  setBuildingRoute((prev) => {
+    const next = !prev;
+
+    navigate({
+      search: next ? "?mode=route" : "",
+    }, { replace: true });
+
+    return next;
+  });
+};
 
   return (
     <div className="flex h-screen w-screen overflow-hidden">
@@ -37,7 +56,7 @@ const SplitMapLayoutContent = ({ children, filteredField }: Props) => {
             </div>
 
             <button
-              onClick={() => setBuildingRoute((v) => !v)}
+              onClick={toggleRouteMode}
               className={`flex-shrink-0 flex items-center gap-2 text-xs font-bold px-4 py-2 rounded-full border transition-all
                 ${buildingRoute
                   ? "bg-white text-accent-bordeaux border-white shadow-lg"
@@ -91,5 +110,7 @@ const SplitMapLayout = (props: Props) => {
     </RouteProvider>
   );
 };
+
+
 
 export default SplitMapLayout;

@@ -223,7 +223,18 @@ export default function DashboardPage() {
             title="Saved routes"
             subtitle="View on map"
             icon={
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B2737" strokeWidth="2" strokeLinecap="round">
+               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                    className="w-6 h-6 text-accent-bordeaux">
+                    <path d="M6 2a2 2 0 0 0-2 2v18l8-4 8 4V4a2 2 0 0 0-2-2H6z" />
+                  </svg>
+            }
+          />
+          <RouteButton
+            to="/search-by-architect?mode=route"
+            title="Build route"
+            subtitle="Create a new route"
+            icon={
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B2737" strokeWidth="2">
                 <circle cx="5" cy="5" r="2" />
                 <circle cx="19" cy="19" r="2" />
                 <path d="M5 7v5a7 7 0 0 0 14 0V7" />

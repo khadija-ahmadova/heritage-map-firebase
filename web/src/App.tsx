@@ -18,7 +18,6 @@
 
 import './index.css'
 import { Route, Routes, Navigate } from 'react-router-dom'
-import { AuthProvider } from './context/AuthProvider'
 import { useAuth } from './context/useAuth'
 import Layout from './layout/Layout'
 import LandingPage from './pages/LandingPage'
@@ -44,7 +43,6 @@ function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
 
 function App() {
   return (
-    <AuthProvider>
       <RouteProvider>
         <Routes>
           {/* Layout routes */}
@@ -99,7 +97,6 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </RouteProvider>
-    </AuthProvider>
   )
 }
 

@@ -59,6 +59,7 @@ export async function getMonumentsByFilter(
     }));
 }
 
+
 /**
  * Get unique values
  */
