@@ -23,11 +23,11 @@ import "leaflet/dist/leaflet.css";
 import { useAuth } from "../context/useAuth";
 import { useRoute } from "../context/RouteContext";
 import { RouteProvider } from "../context/RouteContext";
-import { getSavedRoutesForUser } from "../services/routeService";
+import { getSavedRoutesForUser } from "../services/Routeservice";
 import type { ResolvedRoute, RouteStop } from "../types/Route";
 import RouteLine from "../components/map/RouteLine";
 import MonumentsPopup from "../components/map/MonumentsPopup";
-import { deleteRoute } from "../services/routeService";
+import { deleteRoute } from "../services/Routeservice";
 
 const DefaultIcon = L.icon({ iconUrl: markerIcon });
 L.Marker.prototype.options.icon = DefaultIcon;
@@ -82,12 +82,14 @@ const RouteAccordionItem = ({
   route,
   isOpen,
   onToggle,
-  onDelete
+  onDelete,
+  onEdit,
 }: {
   route: ResolvedRoute;
   isOpen: boolean;
   onToggle: () => void;
   onDelete: () => void;
+  onEdit: () => void;
 }) => (
   <div className="mb-2">
     <button
@@ -119,6 +121,12 @@ const RouteAccordionItem = ({
       className="text-xs text-red-500 hover:text-red-700 transition-colors"
     >
       Remove
+    </button>
+    <button
+      onClick={onEdit}
+      className="text-xs text-blue-500 hover:text-blue-700 transition-colors mr-3"
+    >
+      Edit
     </button>
   </div>
 );
@@ -156,7 +164,7 @@ const RouteMap = ({ stops }: { stops: RouteStop[] }) => (
     })}
 
     {/* Red polyline + numbered circles */}
-    <RouteLine />
+    {stop.length >= 2 && <RouteLine />}
   </MapContainer>
 );
 
@@ -166,6 +174,14 @@ function SavedRoutesInner() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { stops, setRoute, clearRoute } = useRoute();
+
+  const handleEdit = (route: ResolvedRoute) => {
+  // Load route into global context
+  setRoute(route);
+
+  // Navigate into route-building mode
+  navigate("/search-by-architect?mode=route");
+};
 
   const [savedRoutes, setSavedRoutes] = useState<ResolvedRoute[]>([]);
   const handleDelete = async (routeId: string) => {
@@ -258,6 +274,7 @@ function SavedRoutesInner() {
               isOpen={openRouteId === route.id}
               onToggle={() => handleToggle(route)}
               onDelete={() => handleDelete(route.id)}
+              onEdit={() => handleEdit(route)}
             />
           ))}
         </div>

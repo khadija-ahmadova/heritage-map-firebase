@@ -17,8 +17,8 @@ import { useState } from "react";
 import { useAuth } from "../../context/useAuth";
 import { useRoute, TRANSPORT_OPTIONS } from "../../context/RouteContext";
 import type { TransportMode } from "../../context/RouteContext";
-import { saveRoute } from "../../services/routeService";
-
+import { saveRoute } from "../../services/Routeservice";
+import { updateRoute } from "../../services/Routeservice";
 // ─── Stop item ────────────────────────────────────────────────────────────────
 
 const StopItem = ({
@@ -63,13 +63,15 @@ const RouteBuilderPanel = () => {
   const {
     stops, totalDistanceKm, clearRoute,
     transportMode, setTransportMode,
-    removeStop, moveStop,
+    removeStop, moveStop, editingRouteId, setEditingRouteId
   } = useRoute();
 
   const [saving, setSaving]       = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [shareToken, setShareToken] = useState<string | null>(null);
   const [copied, setCopied]       = useState(false);
+
+  const isEditing = Boolean(editingRouteId);
 
   const shareUrl = shareToken
     ? `${window.location.origin}/tour/${shareToken}`
@@ -82,13 +84,22 @@ const RouteBuilderPanel = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // ── Save / Update ───────────────────────────────────────
+
   const handleSave = async () => {
     if (!user || stops.length < 2) return;
     setSaving(true);
     setSaveError(null);
     try {
-      const result = await saveRoute(user.uid, stops, transportMode);
+      if(isEditing && editingRouteId){
+        await updateRoute(editingRouteId, stops, transportMode)
+
+        setShareToken(null);
+      } else {
+        const result = await saveRoute(user.uid, stops, transportMode);
       setShareToken(result.shareToken);
+      }
+      
     } catch {
       setSaveError("Failed to save route. Please try again.");
     } finally {
@@ -98,12 +109,13 @@ const RouteBuilderPanel = () => {
 
   const handleReset = () => {
     clearRoute();
+    setEditingRouteId(null);
     setShareToken(null);
     setSaveError(null);
   };
 
   // ── After save: show share link ──
-  if (shareToken && shareUrl) {
+  if (shareToken && shareUrl && !isEditing) {
     return (
       <div className="p-4">
         <div className="bg-white rounded-xl border border-gray-100 p-4 mb-3">

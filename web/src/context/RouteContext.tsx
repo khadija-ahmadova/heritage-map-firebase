@@ -61,9 +61,13 @@ interface RouteContextValue {
   stops: RouteStop[];
   routeName: string | null;
   totalDistanceKm: number;
-  // viewing
+  // viewing / editing
   setRoute: (route: ResolvedRoute) => void;
   clearRoute: () => void;
+
+  // editing
+  editingRouteId: string | null;
+  setEditingRouteId: (id: string | null) => void;
   // building
   transportMode: TransportMode;
   setTransportMode: (mode: TransportMode) => void;
@@ -81,11 +85,13 @@ export const RouteProvider = ({ children }: { children: ReactNode }) => {
   const [stops, setStops]               = useState<RouteStop[]>([]);
   const [routeName, setRouteName]       = useState<string | null>(null);
   const [transportMode, setTransportMode] = useState<TransportMode>("foot-walking");
+  const [editingRouteId, setEditingRouteId] = useState<string | null>(null);
 
   // ── Viewing ──
   const setRoute = useCallback((route: ResolvedRoute) => {
     setStops(route.stops);
     setRouteName(route.name);
+    setEditingRouteId(route.id);
   }, []);
 
   const clearRoute = useCallback(() => {
@@ -129,7 +135,7 @@ export const RouteProvider = ({ children }: { children: ReactNode }) => {
       stops, routeName, totalDistanceKm,
       setRoute, clearRoute,
       transportMode, setTransportMode,
-      addStop, removeStop, moveStop, isInRoute,
+      addStop, removeStop, moveStop, isInRoute, editingRouteId, setEditingRouteId
     }}>
       {children}
     </RouteContext.Provider>

@@ -7,14 +7,13 @@
  */
 
 import {
-  collection, addDoc, getDocs, query, where, serverTimestamp,
+  collection, addDoc, getDocs, updateDoc, query, where, serverTimestamp, deleteDoc, doc
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
 import type { ResolvedRoute, RouteStop } from "../types/Route";
 import type { Monuments } from "../types/Monuments";
 import type { GeoPoint } from "firebase/firestore";
 import type { TransportMode } from "../context/RouteContext";
-import { deleteDoc, doc } from "firebase/firestore";
 // ─── Mobile schema types ──────────────────────────────────────────────────────
 
 interface MobileLandmark {
@@ -173,4 +172,33 @@ export async function saveRoute(
 // ─── DELETE ────────────────────────────────────────────────────────────────────
 export async function deleteRoute(routeId: string): Promise<void> {
   await deleteDoc(doc(db, "routes", routeId));
+}
+
+// ─── EDIT ────────────────────────────────────────────────────────────────────
+export async function updateRoute(
+  routeId: string,
+  stops: RouteStop[],
+  mode: TransportMode
+): Promise<void> {
+  const distanceKm = computeDistance(stops);
+  const durationMin = estimateDurationMin(distanceKm, mode);
+
+  const landmarks = stops.map((s, i) => ({
+    landmark_id: s.monument.id,
+    name: s.monument.name,
+    architect: s.monument.architect ?? "",
+    description: s.monument.description ?? "",
+    location: s.monument.location ?? "",
+    period: s.monument.period ?? "",
+    latitude: s.monument.coordinates.latitude,
+    longitude: s.monument.coordinates.longitude,
+    order_index: i,
+  }));
+
+  await updateDoc(doc(db, "routes", routeId), {
+    landmarks,
+    mode,
+    distanceKm,
+    durationMin,
+  });
 }
