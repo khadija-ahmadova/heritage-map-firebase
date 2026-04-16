@@ -13,6 +13,7 @@ import { signOut } from "../lib/auth";
 
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { user, role, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -47,6 +48,7 @@ const Header = () => {
         {/* Navigation */}
         <nav className="hidden md:flex items-center gap-8">
           <Link to="/" className={linkClass}>Home</Link>
+          <Link to="/search" className={linkClass}>Explore</Link>          
 
           {/* Don't render auth buttons while Firebase is restoring the session */}
           {!loading && (

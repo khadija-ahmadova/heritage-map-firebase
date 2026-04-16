@@ -10,6 +10,7 @@ interface Props {
   children: (props: {
     selectedFilter: string | null;
     setSelectedFilter: (value: string | null) => void;
+    setActiveMonument: (m: Monuments) => void;
   }) => React.ReactNode;
   filteredField: FilterField;
 }
@@ -67,7 +68,7 @@ const SplitMapLayoutContent = ({ children, filteredField }: Props) => {
             <RouteBuilderPanel />
           ) : (
             <div className="p-6">
-              {children({ selectedFilter, setSelectedFilter })}
+              {children({ selectedFilter, setSelectedFilter, setActiveMonument })}
             </div>
           )}
         </div>

@@ -36,6 +36,7 @@ import SearchbyPeriodPage from './pages/PeriodSearchPage'
 import SavedRoutesPage from './pages/SavedRoutesPage'
 import { RouteProvider } from './context/RouteContext'
 import SharePage from './pages/SharePage'
+import SearchPage from './pages/SearchPage'
 
 // PublicOnlyRoute — the mirror of ProtectedRoute.
 // If the user is already logged in, redirect them away from /signin and /register
@@ -94,6 +95,7 @@ function App() {
           />
 
           {/* Search */}
+          <Route path="/search" element={<SearchPage />} />
           <Route path="/search-by-architect" element={<SearchByArcitectPage />} />
           <Route path="/search-by-period" element={<SearchbyPeriodPage />} />
           <Route path="/search-by-style" element={<SearchByStylePage />} />

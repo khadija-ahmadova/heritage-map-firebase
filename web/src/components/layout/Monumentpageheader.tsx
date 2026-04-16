@@ -35,14 +35,24 @@ const MonumentPageHeader = () => {
         {/* Navigation */}
         <nav className="hidden md:flex items-center gap-8">
           <Link to="/" className={linkClass}>Home</Link>
+          <Link to="/search" className={linkClass}>Explore</Link>          
 
           {!loading && (
             user ? (
               <>
                 <Link to="/dashboard" className={linkClass}>Dashboard</Link>
+
+                <Link
+                  to="/search-by-architect?mode=route"
+                  className={linkClass}
+                >
+                  Build Route
+                </Link>
+                
                 <button onClick={handleSignOut} className={buttonClass}>
                   Sign out
                 </button>
+
               </>
             ) : (
               <>
