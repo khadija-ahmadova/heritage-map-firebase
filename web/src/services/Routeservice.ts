@@ -14,7 +14,7 @@ import type { ResolvedRoute, RouteStop } from "../types/Route";
 import type { Monuments } from "../types/Monuments";
 import type { GeoPoint } from "firebase/firestore";
 import type { TransportMode } from "../context/RouteContext";
-
+import { deleteDoc, doc } from "firebase/firestore";
 // ─── Mobile schema types ──────────────────────────────────────────────────────
 
 interface MobileLandmark {
@@ -168,4 +168,9 @@ export async function saveRoute(
 
   const ref = await addDoc(collection(db, "routes"), doc);
   return { id: ref.id, shareToken };
+}
+
+// ─── DELETE ────────────────────────────────────────────────────────────────────
+export async function deleteRoute(routeId: string): Promise<void> {
+  await deleteDoc(doc(db, "routes", routeId));
 }

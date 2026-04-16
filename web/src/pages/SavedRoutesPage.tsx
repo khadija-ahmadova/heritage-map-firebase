@@ -27,6 +27,7 @@ import { getSavedRoutesForUser } from "../services/routeService";
 import type { ResolvedRoute, RouteStop } from "../types/Route";
 import RouteLine from "../components/map/RouteLine";
 import MonumentsPopup from "../components/map/MonumentsPopup";
+import { deleteRoute } from "../services/routeService";
 
 const DefaultIcon = L.icon({ iconUrl: markerIcon });
 L.Marker.prototype.options.icon = DefaultIcon;
@@ -81,10 +82,12 @@ const RouteAccordionItem = ({
   route,
   isOpen,
   onToggle,
+  onDelete
 }: {
   route: ResolvedRoute;
   isOpen: boolean;
   onToggle: () => void;
+  onDelete: () => void;
 }) => (
   <div className="mb-2">
     <button
@@ -110,6 +113,13 @@ const RouteAccordionItem = ({
         ))}
       </div>
     )}
+
+    <button
+      onClick={onDelete}
+      className="text-xs text-red-500 hover:text-red-700 transition-colors"
+    >
+      Remove
+    </button>
   </div>
 );
 
@@ -158,6 +168,27 @@ function SavedRoutesInner() {
   const { stops, setRoute, clearRoute } = useRoute();
 
   const [savedRoutes, setSavedRoutes] = useState<ResolvedRoute[]>([]);
+  const handleDelete = async (routeId: string) => {
+  const confirmed = window.confirm("Delete this route?");
+  if (!confirmed) return;
+
+  try {
+    await deleteRoute(routeId);
+
+    setSavedRoutes((prev) =>
+      prev.filter((r) => r.id !== routeId)
+    );
+
+    // If deleted route is currently open → clear map
+    if (openRouteId === routeId) {
+      setOpenRouteId(null);
+      clearRoute();
+    }
+
+  } catch (err) {
+    console.error("Failed to delete route", err);
+  }
+};
   const [openRouteId, setOpenRouteId] = useState<string | null>(null);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState<string | null>(null);
@@ -226,6 +257,7 @@ function SavedRoutesInner() {
               route={route}
               isOpen={openRouteId === route.id}
               onToggle={() => handleToggle(route)}
+              onDelete={() => handleDelete(route.id)}
             />
           ))}
         </div>
