@@ -56,6 +56,7 @@ import type { Monuments } from "../../types/Monuments";
 import { getMonumentsByFilter } from "../../services/filterService";
 import type { FilterField } from "../../types/Filters";
 import BuildingMarker from "./MonumentsMarker";
+import RouteLine from "./RouteLine";
 import L from "leaflet"
 import markerIcon from "leaflet/dist/images/marker-icon.png"
 import "leaflet/dist/leaflet.css"
@@ -93,70 +94,54 @@ interface Props {
   selectedFilter: string | null;
   filterField: FilterField;
   activeMonument: Monuments | null
+  showRouteButton?: boolean;
 }
 
-const MapView = ({ selectedFilter, filterField, activeMonument }: Props) => {
+const MapView = ({ selectedFilter, filterField, activeMonument, showRouteButton = false }: Props) => {
   const [monuments, setMonuments] = useState<Monuments[]>([]);
   const [loading, setLoading] = useState(true);
 
 useEffect(() => {
-  let isMounted = true;
-
-  const fetchMonuments = async () => {
-    setLoading(true); 
-    try {
-      const data = await getMonumentsByFilter(filterField, selectedFilter);
-      if (isMounted) {
-        setMonuments(data);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      if (isMounted) setLoading(false);
-    }
-  };
-
-  fetchMonuments();
-
-  return () => {
-    isMounted = false;
-  };
-}, [selectedFilter, filterField]);
-
-    
-    return (
-        <div className="h-full w-full rounded-xl overflow-hidden">
-
-             {loading && (
-                <div className="absolute z-[1000] bg-white p-2 m-2 rounded shadow">
-                    Loading...
-                </div>
-            )}
-
-
-            <MapContainer
-                center={[40.371655182714406, 49.843992955618646]} // Baku
-                zoom={13}
-                scrollWheelZoom={true}
-                style={{ height: "100%", width: "100%"}}
-            >
-                <TileLayer
-                    attribution="&copy; OpenStreetMap contributors"
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                
-                {/* This component handles the zoom animation hook */}
-                <MapController activeMonument={activeMonument} />
-
-                {monuments.map((monuments) => (
-                    <BuildingMarker
-                        key={monuments.id}
-                        monuments={monuments}
-                    />
-                ))}
-            </MapContainer>
+    let isMounted = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLoading(true);
+    getMonumentsByFilter(filterField, selectedFilter)
+      .then((data) => { if (isMounted) setMonuments(data); })
+      .catch(console.error)
+      .finally(() => { if (isMounted) setLoading(false); });
+    return () => { isMounted = false; };
+  }, [selectedFilter, filterField]);
+ 
+  return (
+    <div className="h-full w-full rounded-xl overflow-hidden">
+      {loading && (
+        <div className="absolute z-1000 bg-white p-2 m-2 rounded shadow">
+          Loading...
         </div>
-    )
-}
-
-export default MapView
+      )}
+      <MapContainer
+        center={[40.371655182714406, 49.843992955618646]}
+        zoom={13}
+        scrollWheelZoom={true}
+        style={{ height: "100%", width: "100%" }}
+      >
+        <TileLayer
+          attribution="&copy; OpenStreetMap contributors"
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <MapController activeMonument={activeMonument} />
+        {monuments.map((m) => (
+          <BuildingMarker
+            key={m.id}
+            monuments={m}
+            showRouteButton={showRouteButton}
+          />
+        ))}
+        {/* Renders polyline when route stops exist */}
+        <RouteLine />
+      </MapContainer>
+    </div>
+  );
+};
+ 
+export default MapView;

@@ -4,7 +4,7 @@
 //   - Transparent with white text when at the top of the page
 //   - Bordeaux background when scrolled past 50px
 //   - Shows "Sign in" / "Register" buttons when logged out
-//   - Shows "Dashboard" + "Sign out" when logged in
+//   - Shows "Dashboard" + "Build Route" + "Sign out" when logged in
 
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -47,7 +47,6 @@ const Header = () => {
         {/* Navigation */}
         <nav className="hidden md:flex items-center gap-8">
           <Link to="/" className={linkClass}>Home</Link>
-          <Link to="/advanced-search" className={linkClass}>Advanced Search</Link>
 
           {/* Don't render auth buttons while Firebase is restoring the session */}
           {!loading && (
@@ -55,15 +54,12 @@ const Header = () => {
               // Logged-in state
               <>
                 <Link to="/dashboard" className={linkClass}>Dashboard</Link>
-                {role === 'researcher' && (
-                  <>
-                    <Link to="/submit-monument" className={linkClass}>Submit entry</Link>
-                    <Link to="/my-contributions" className={linkClass}>My contributions</Link>
-                  </>
-                )}
-                {role === 'moderator' && (
-                  <Link to="/moderator" className={linkClass}>Moderation</Link>
-                )}
+                <Link
+                  to="/search-by-architect?mode=route"
+                  className={linkClass}
+                >
+                  Build Route
+                </Link>
                 <button onClick={handleSignOut} className={buttonClass}>
                   Sign out
                 </button>

@@ -4,8 +4,8 @@
  * Authenticated landing page. Shows:
  * - Narrow hero image with welcome text overlay (matches landing page style)
  * - Horizontally scrollable row of saved monument cards
- * - Two large buttons: Saved Routes (→ /search-by-style with RoutePanel)
- *   and Past Routes (placeholder, coming soon)
+ * - Two large buttons: Saved Routes
+ *   and Build Routes
  *
  * Data:
  * - Saved monuments fetched from Firestore "saved_landmarks" collection
@@ -34,7 +34,17 @@ import dashboardHero from "../assets/images/Landing page hero.jpg";
 
 const SavedMonumentCard = ({ monument }: { monument: Monuments }) => (
   <div className="flex-shrink-0 w-44 bg-white rounded-xl border border-gray-100 overflow-hidden">
-    {/* Image placeholder — replace src with monument.imageUrl when available */}
+    {monument.imageUrl?.[0] ? (
+      <img
+        src={monument.imageUrl[0]}
+        alt={monument.name}
+        className="w-full h-28 object-cover"
+      />
+      ) : (
+      <div className="w-full h-28 bg-bg-seashell flex items-center justify-center">
+        {/* existing svg placeholder */}
+      </div>
+    )}
     <div className="w-full h-28 bg-bg-seashell flex items-center justify-center">
       <svg
         className="w-8 h-8 text-gray-300"
@@ -209,28 +219,28 @@ export default function DashboardPage() {
  
         <div className="flex gap-3">
           <RouteButton
-            to="/search-by-style"
+            to="/saved-routes"
             title="Saved routes"
             subtitle="View on map"
             icon={
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B2737" strokeWidth="2" strokeLinecap="round">
-                <circle cx="5" cy="5" r="2" />
-                <circle cx="19" cy="19" r="2" />
-                <path d="M5 7v5a7 7 0 0 0 14 0V7" />
-              </svg>
+               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"
+                    className="w-6 h-6 text-accent-bordeaux">
+                    <path d="M6 2a2 2 0 0 0-2 2v18l8-4 8 4V4a2 2 0 0 0-2-2H6z" />
+                  </svg>
             }
           />
-          <RouteButton
-            disabled
-            title="Past routes"
-            subtitle="Coming soon"
-            icon={
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B2737" strokeWidth="2" strokeLinecap="round">
-                <polyline points="12 8 12 12 14 14" />
-                <circle cx="12" cy="12" r="9" />
-              </svg>
-            }
-          />
+            <RouteButton
+              to="/search-by-architect?mode=route"
+              title="Build route"
+              subtitle="Create a new route"
+              icon={
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B2737" strokeWidth="2">
+                  <circle cx="5" cy="5" r="2" />
+                  <circle cx="19" cy="19" r="2" />
+                  <path d="M5 7v5a7 7 0 0 0 14 0V7" />
+                </svg>
+              }
+            />
         </div>
  
         {/* Sign out */}
