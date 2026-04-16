@@ -5,7 +5,7 @@
  * - Narrow hero image with welcome text overlay (matches landing page style)
  * - Horizontally scrollable row of saved monument cards
  * - Two large buttons: Saved Routes
- *   and Past Routes (placeholder, coming soon)
+ *   and Build Routes
  *
  * Data:
  * - Saved monuments fetched from Firestore "saved_landmarks" collection
@@ -229,29 +229,18 @@ export default function DashboardPage() {
                   </svg>
             }
           />
-          <RouteButton
-            to="/search-by-architect?mode=route"
-            title="Build route"
-            subtitle="Create a new route"
-            icon={
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B2737" strokeWidth="2">
-                <circle cx="5" cy="5" r="2" />
-                <circle cx="19" cy="19" r="2" />
-                <path d="M5 7v5a7 7 0 0 0 14 0V7" />
-              </svg>
-            }
-          />
-          <RouteButton
-            disabled
-            title="Past routes"
-            subtitle="Coming soon"
-            icon={
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B2737" strokeWidth="2" strokeLinecap="round">
-                <polyline points="12 8 12 12 14 14" />
-                <circle cx="12" cy="12" r="9" />
-              </svg>
-            }
-          />
+            <RouteButton
+              to="/search-by-architect?mode=route"
+              title="Build route"
+              subtitle="Create a new route"
+              icon={
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B2737" strokeWidth="2">
+                  <circle cx="5" cy="5" r="2" />
+                  <circle cx="19" cy="19" r="2" />
+                  <path d="M5 7v5a7 7 0 0 0 14 0V7" />
+                </svg>
+              }
+            />
         </div>
  
         {/* Sign out */}
