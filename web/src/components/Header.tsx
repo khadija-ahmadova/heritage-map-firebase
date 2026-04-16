@@ -13,7 +13,7 @@ import { signOut } from "../lib/auth";
 
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);
-  const { user, loading } = useAuth();
+  const { user, role, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {

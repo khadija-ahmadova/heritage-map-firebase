@@ -1,19 +1,26 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 import { doc, setDoc, deleteDoc, serverTimestamp } from 'firebase/firestore'
 import { auth, db } from '../lib/firebase'
+import { useAuth } from '../context/useAuth'
 import { getMonumentById } from '../services/monumentsService'
+import { getApprovedContributions, getMonumentPhotos } from '../services/contributionsService'
 import type { Monuments } from '../types/Monuments'
 import MonumentPageHeader from '../components/layout/Monumentpageheader'
+import type { Contribution } from '../types/Contribution'
+import type { Photo } from '../types/Photo'
 
 type ReaderLevel = 'simplified' | 'advanced'
 
 export default function MonumentDetailPage() {
   const { id } = useParams<{ id: string }>()
 
+  const { role } = useAuth()
   const [monument, setMonument] = useState<Monuments | null>(null)
   const [loading, setLoading] = useState(true)
   const [saved, setSaved] = useState(false)
+  const [photos, setPhotos] = useState<Photo[]>([])
+  const [contributions, setContributions] = useState<Contribution[]>([])
   const [showToast, setShowToast] = useState(false)
   const [readerLevel, setReaderLevel] = useState<ReaderLevel>('simplified')
   const [showReaderDropdown, setShowReaderDropdown] = useState(false)
@@ -25,6 +32,8 @@ export default function MonumentDetailPage() {
     getMonumentById(id)
       .then(setMonument)
       .finally(() => setLoading(false))
+    getMonumentPhotos(id).then(setPhotos)
+    getApprovedContributions(id).then(setContributions)
   }, [id])
 
   useEffect(() => {
@@ -201,6 +210,25 @@ export default function MonumentDetailPage() {
               </span>
             )}
           </div>
+        {/* Photo gallery */}
+        <div className="w-full overflow-hidden">
+          {photos.length > 0 ? (
+            <div className="flex gap-2 overflow-x-auto px-2 py-2">
+              {photos.map((photo) => (
+                <img
+                  key={photo.id}
+                  src={photo.image_url}
+                  alt="Monument photo"
+                  className="h-52 w-auto flex-shrink-0 object-cover rounded-lg"
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="w-full h-52 bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center">
+              <span className="text-gray-500 text-sm">No photo available</span>
+            </div>
+          )}
+        </div>
 
           {/* ── Images ── */}
           {monument.imageUrl && monument.imageUrl.length > 0 && (
@@ -231,6 +259,39 @@ export default function MonumentDetailPage() {
           </div>
 
         </div>
+        {/* Contribute button — researchers only */}
+        {role === 'researcher' && (
+          <div className="px-6 pb-5">
+            <Link
+              to={`/contribute/${monument.id}`}
+              className="inline-flex items-center gap-2 text-sm font-medium text-accent-bordeaux
+                         border border-accent-bordeaux rounded-lg px-4 py-2
+                         hover:bg-accent-bordeaux hover:text-white transition-colors"
+            >
+              + Contribute historical info
+            </Link>
+          </div>
+        )}
+
+        {/* Approved contributions */}
+        {contributions.length > 0 && (
+          <div className="border-t border-gray-100 pt-4 mt-2 px-6 pb-6">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+              Researcher Contributions
+            </p>
+            <div className="space-y-2">
+              {contributions.map((c) => (
+                <div
+                  key={c.id}
+                  className="text-sm text-gray-700 leading-relaxed bg-bg-seashell rounded-lg px-4 py-3"
+                >
+                  {c.information}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
     </>
   )

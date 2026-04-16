@@ -12,6 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons'
 import type { Monument } from '../hooks/useMonuments'
 import type { TravelMode } from '../hooks/useRoute'
+import { useTheme } from '../context/ThemeContext'
 
 
 
@@ -213,6 +214,7 @@ export default function RouteBuilderSheet({
 
   const addressResolved = startType === 'address' && !!startAddressCoords
   const addressPending  = startType === 'address' && !!addressInput.trim() && !startAddressCoords
+  const { colors } = useTheme()
 
   if (!visible) return null
 
@@ -233,7 +235,7 @@ export default function RouteBuilderSheet({
           {MODES.map((mode) => (
             <TouchableOpacity
               key={mode.key}
-              style={[styles.modeBtn, selectedMode === mode.key && styles.modeBtnActive]}
+              style={[styles.modeBtn, selectedMode === mode.key && { backgroundColor: colors.accentSecondary }]}
               onPress={() => { setSelectedMode(mode.key); onModeChange(mode.key) }}
             >
               <Ionicons
@@ -357,7 +359,7 @@ export default function RouteBuilderSheet({
             route.map((monument, index) => (
               <View key={monument.id}>
                 <View style={styles.stopRow}>
-                  <View style={styles.stopIndex}>
+                  <View style={[styles.stopIndex, { backgroundColor: colors.accentSecondary }]}>
                     <Text style={styles.stopIndexText}>{index + 1}</Text>
                   </View>
                   <Text style={styles.stopName} numberOfLines={1}>{monument.name}</Text>
@@ -376,7 +378,7 @@ export default function RouteBuilderSheet({
                     >
                       <Ionicons name="chevron-down" size={14} color={index === route.length - 1 ? '#C0A898' : '#fff'} />
                     </TouchableOpacity>
-                    <TouchableOpacity onPress={() => removeStop(monument.id)} style={styles.removeBtn}>
+                    <TouchableOpacity onPress={() => removeStop(monument.id)} style={[styles.removeBtn, { backgroundColor: colors.accent}]}>
                       <Ionicons name="close" size={14} color="#fff" />
                     </TouchableOpacity>
                   </View>
@@ -395,8 +397,8 @@ export default function RouteBuilderSheet({
           <TouchableOpacity style={styles.iconBtn}>
             <Ionicons name="share-social-outline" size={20} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.addStopBtn, isAddingStop && styles.addStopBtnActive]}
+          <TouchableOpacity 
+            style={[styles.addStopBtn, isAddingStop && [styles.addStopBtn, { backgroundColor: colors.accent}]]}
             onPress={() => onAddStopMode(!isAddingStop)}
           >
            <Ionicons name={isAddingStop ? "close-circle-outline" : "add-circle-outline"} size={18} color="#fff" />
@@ -412,8 +414,8 @@ export default function RouteBuilderSheet({
 
         {isAddingStop && (
           <View style={styles.banner}>
-            <Ionicons name="information-circle-outline" size={16} color="#E8A876" />
-            <Text style={styles.bannerText}>Tap a marker on the map to add a stop</Text>
+            <Ionicons name="information-circle-outline" size={16} color={colors.accentSecondary} />
+              <Text style={[styles.bannerText, { color: colors.accentSecondary }]}>Tap a marker on the map to add a stop</Text>
           </View>
         )}
 
@@ -444,7 +446,7 @@ export default function RouteBuilderSheet({
               <TouchableOpacity style={styles.saveModalCancel} onPress={() => setSaveModalVisible(false)}>
                 <Text style={styles.saveModalCancelText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.saveModalConfirm} onPress={handleConfirmSave}>
+              <TouchableOpacity style={[styles.saveModalConfirm, { backgroundColor: colors.accentSecondary }]} onPress={handleConfirmSave}>
                 <Text style={styles.saveModalConfirmText}>Save</Text>
               </TouchableOpacity>
             </View>
@@ -490,7 +492,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 6,
     borderRadius: 10, backgroundColor: '#5C4F47',
   },
-  modeBtnActive: { backgroundColor: '#E8A876' },
   modeLabel: { color: '#C0A898', fontSize: 12, fontWeight: '600' },
   modeLabelActive: { color: '#fff' },
   infoPill: {
@@ -550,7 +551,7 @@ const styles = StyleSheet.create({
   stopRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, gap: 10 },
   stopIndex: {
     width: 22, height: 22, borderRadius: 11,
-    backgroundColor: '#E8A876', alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center', justifyContent: 'center',
   },
   stopIndexText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   stopName: { flex: 1, color: '#FFFFFF', fontSize: 14, fontWeight: '500' },
@@ -561,7 +562,7 @@ const styles = StyleSheet.create({
   },
   reorderBtnDisabled: { backgroundColor: '#3D3228' },
   removeBtn: {
-    width: 24, height: 24, backgroundColor: '#8B4A3A',
+    width: 24, height: 24,
     borderRadius: 6, alignItems: 'center', justifyContent: 'center',
   },
   divider: { height: 1, backgroundColor: '#5C4F47' },
@@ -580,7 +581,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#5C4F47', borderRadius: 10,
     paddingHorizontal: 10, paddingVertical: 8,
   },
-  addStopBtnActive: { backgroundColor: '#8B4A3A' },
+  
   addStopText: { color: '#fff', fontSize: 13, fontWeight: '600' },
   doneBtn: { marginLeft: 'auto', paddingHorizontal: 20, paddingVertical: 8, borderRadius: 10 },
   doneBtnText: { color: '#4A90D9', fontSize: 16, fontWeight: '600' },
@@ -590,7 +591,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16, paddingBottom: 10,
   },
   bannerBlue: {},
-  bannerText: { color: '#E8A876', fontSize: 12 },
+  bannerText: {fontSize: 12 },
 
   // Save modal
   saveModal: {
@@ -609,7 +610,7 @@ const styles = StyleSheet.create({
   saveModalCancel: { paddingHorizontal: 16, paddingVertical: 8 },
   saveModalCancelText: { color: '#C0A898', fontSize: 14, fontWeight: '600' },
   saveModalConfirm: {
-    backgroundColor: '#E8A876', borderRadius: 10,
+    borderRadius: 10,
     paddingHorizontal: 16, paddingVertical: 8,
   },
   saveModalConfirmText: { color: '#fff', fontSize: 14, fontWeight: '700' },

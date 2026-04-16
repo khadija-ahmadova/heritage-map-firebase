@@ -24,6 +24,10 @@ import { useRoute } from '../../hooks/useRoute'
 import type { TravelMode } from '../../hooks/useRoute'
 import { useSaved } from '../../context/SavedContext'
 import type { SavedRoute } from '../../context/SavedContext'
+import { Fragment } from 'react'
+import { useTheme } from '../../context/ThemeContext'
+import { useProximityNotifications } from '../../hooks/useProximityNotifications'
+import * as Notifications from 'expo-notifications'
 
 
 
@@ -39,7 +43,28 @@ const MODE_COLORS: Record<TravelMode, string> = {
   'driving-car': '#E8341C',
   'cycling-regular': '#3DAE6E',
 }
-
+const DARK_MAP_STYLE = [
+  { elementType: 'geometry', stylers: [{ color: '#2c2c2c' }] },
+  { elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#848484' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#212121' }] },
+  { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#757575' }] },
+  { featureType: 'administrative.country', elementType: 'labels.text.fill', stylers: [{ color: '#9e9e9e' }] },
+  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#bdbdbd' }] },
+  { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#686767' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#042809' }] },
+  { featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
+  { featureType: 'poi.park', elementType: 'labels.text.stroke', stylers: [{ color: '#1b1b1b' }] },
+  { featureType: 'road', elementType: 'geometry.fill', stylers: [{ color: '#3f3e3e' }] },
+  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#8a8a8a' }] },
+  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#373737' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#3c3c3c' }] },
+  { featureType: 'road.highway.controlled_access', elementType: 'geometry', stylers: [{ color: '#4e4e4e' }] },
+  { featureType: 'road.local', elementType: 'labels.text.fill', stylers: [{ color: '#616161' }] },
+  { featureType: 'transit', elementType: 'labels.text.fill', stylers: [{ color: '#757575' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#070526' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#3d3d3d' }] },
+]
 
 
 type SearchSuggestion =
@@ -103,6 +128,7 @@ export default function OpenScreen({ navigation }: any) {
   // can show a "located" indicator without doing async work itself
   const [startAddressCoords, setStartAddressCoords] = useState<{ latitude: number; longitude: number } | null>(null)
 
+
   const mapRef = useRef<MapView>(null)
   const routeActiveRef = useRef(false)
   useEffect(() => { routeActiveRef.current = routeVisible || routeConfirmed }, [routeVisible, routeConfirmed])
@@ -112,17 +138,51 @@ export default function OpenScreen({ navigation }: any) {
   const { monuments, loading, error } = useMonuments()
   const { routeResult, loading: routeLoading, fetchRoute, clearRoute } = useRoute()
   const { saveRoute, pushPastRoute } = useSaved()
+  const { colors, isDark, location: locationEnabled } = useTheme()
+  const { notifications } = useTheme()   
+  useProximityNotifications(userLocation, monuments, notifications && locationEnabled)
+
+  useEffect(() => {
+  const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
+    const monumentId = response.notification.request.content.data?.monumentId as string | undefined
+    if (!monumentId) return
+
+    const monument = monuments.find((m) => m.id === monumentId)
+    if (!monument) return
+
+    // Fly to it and open the detail sheet
+    mapRef.current?.animateToRegion(
+      { ...monument.coordinates, latitudeDelta: 0.01, longitudeDelta: 0.01 },
+      600
+    )
+    setSelected(monument)
+  })
+
+  return () => subscription.remove()
+}, [monuments])
 
   // GPS 
 
   useEffect(() => {
-    (async () => {
+    if (!locationEnabled) {
+      setUserLocation(null)
+      return
+    }
+    let subscriber: Location.LocationSubscription | null = null
+    ;(async () => {
       const { status } = await Location.requestForegroundPermissionsAsync()
       if (status !== 'granted') return
+      // Get an immediate fix first
       const loc = await Location.getCurrentPositionAsync({})
       setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude })
+      // Then keep watching
+      subscriber = await Location.watchPositionAsync(
+        { accuracy: Location.Accuracy.Balanced, distanceInterval: 30 },
+        (loc) => setUserLocation({ latitude: loc.coords.latitude, longitude: loc.coords.longitude })
+      )
     })()
-  }, [])
+    return () => { subscriber?.remove() }
+  }, [locationEnabled])
 
   useEffect(() => {
     if (error) {
@@ -393,14 +453,17 @@ export default function OpenScreen({ navigation }: any) {
 
 
   return (
+  <Fragment>
     <View style={styles.container}>
       <MapView
+        key={isDark ? 'dark' : 'light'}
         ref={mapRef}
         style={StyleSheet.absoluteFill}
         mapType="standard"
         initialRegion={BAKU_REGION}
         showsUserLocation
         showsMyLocationButton={false}
+        customMapStyle={isDark ? DARK_MAP_STYLE : []}
         onPress={() => {
           if (showSuggestions) setSuggestions([])
         }}
@@ -413,7 +476,6 @@ export default function OpenScreen({ navigation }: any) {
           />
         )}
 
-        {/* Show a distinct marker for a geocoded address start */}
         {startAddressCoords && routeVisible && (
           <Marker
             coordinate={startAddressCoords}
@@ -446,24 +508,21 @@ export default function OpenScreen({ navigation }: any) {
         </View>
       )}
 
-      {/* Search bar */}
       <View style={styles.searchContainer}>
         <TouchableOpacity onPress={() => navigation.navigate('Account')}>
           <Avatar
             rounded
             icon={{ name: 'person', type: 'ionicon', color: '#FFFFFF', size: 26 }}
-            containerStyle={styles.avatar}
+            containerStyle={[styles.avatar, { backgroundColor: colors.accent }]}
           />
         </TouchableOpacity>
-        <View style={styles.searchBarWrapper}>
+        <View style={[styles.searchBarWrapper, { backgroundColor: colors.background }]}>
           <TextInput
             placeholder="Search monuments or places..."
             onChangeText={handleSearchChange}
             value={search}
-            style={styles.searchInput}
-            placeholderTextColor="#999"
-            returnKeyType="search"
-            onSubmitEditing={handleSearchSubmit}
+            style={[styles.searchInput, { color: colors.text }]}
+            placeholderTextColor={colors.subtext}
           />
           {isSearching ? (
             <ActivityIndicator size="small" color="#6E3606" />
@@ -472,14 +531,13 @@ export default function OpenScreen({ navigation }: any) {
               <Ionicons name="close-circle" size={20} color="#999" />
             </TouchableOpacity>
           ) : (
-            <Ionicons name="search-outline" size={20} color="#6E3606" />
+            <Ionicons name="search-outline" size={20} color={colors.accent} />
           )}
         </View>
       </View>
 
-      {/* Suggestion dropdown */}
       {showSuggestions && (
-        <View style={styles.suggestionsBox}>
+        <View style={[styles.suggestionsBox, { backgroundColor: colors.background }]}>
           <FlatList
             data={suggestions}
             keyExtractor={(_, i) => String(i)}
@@ -492,28 +550,28 @@ export default function OpenScreen({ navigation }: any) {
                 <Ionicons
                   name={item.kind === 'monument' ? 'business-outline' : 'location-outline'}
                   size={16}
-                  color={item.kind === 'monument' ? '#6E3606' : '#888'}
+                  color={item.kind === 'monument' ? colors.accentSecondary : '#888'}
                   style={styles.suggestionIcon}
                 />
                 <View style={styles.suggestionTextWrap}>
-                  <Text style={styles.suggestionPrimary} numberOfLines={1}>
+                 <Text style={[styles.suggestionPrimary, { color: colors.text }]} numberOfLines={1}>
                     {item.kind === 'monument' ? item.monument.name : item.display_name.split(',')[0]}
                   </Text>
                   {item.kind === 'monument' && item.monument.location ? (
-                    <Text style={styles.suggestionSecondary} numberOfLines={1}>
+                    <Text style={[styles.suggestionSecondary, { color: colors.subtext }]} numberOfLines={1}>
                       {[item.monument.architect, item.monument.period, item.monument.location]
                         .filter(Boolean)
                         .join(' · ')}
                     </Text>
                   ) : item.kind === 'place' ? (
-                    <Text style={styles.suggestionSecondary} numberOfLines={1}>
+                    <Text style={[styles.suggestionSecondary, { color: colors.subtext }]} numberOfLines={1}>
                       {item.display_name.split(',').slice(1, 3).join(',')}
                     </Text>
                   ) : null}
                 </View>
                 {item.kind === 'monument' && (
-                  <View style={styles.monumentBadge}>
-                    <Text style={styles.monumentBadgeText}>Monument</Text>
+                  <View style={[styles.monumentBadge, { backgroundColor: colors.border }]}>
+                    <Text style={[styles.monumentBadgeText, { color: colors.accent}]}>Monument</Text>
                   </View>
                 )}
               </TouchableOpacity>
@@ -530,7 +588,7 @@ export default function OpenScreen({ navigation }: any) {
       ) : null}
 
       {showBottomPanel && (
-        <View style={styles.bottomPanel}>
+        <View style={[styles.bottomPanel, { backgroundColor: colors.accent }]}>
           <TouchableOpacity style={styles.tabItem} onPress={() => setExploreOpen(true)}>
             <Ionicons name="location-outline" color="white" size={24} />
             <Text style={styles.tabText}>Explore</Text>
@@ -543,18 +601,11 @@ export default function OpenScreen({ navigation }: any) {
       )}
 
       {routeConfirmed && (
-        <TouchableOpacity style={styles.exitRouteBtn} onPress={handleExitRoute}>
+       <TouchableOpacity style={[styles.exitRouteBtn, { backgroundColor: colors.accent }]} onPress={handleExitRoute}>
           <Ionicons name="close" size={18} color="#fff" />
           <Text style={styles.exitRouteBtnText}>Exit Route</Text>
         </TouchableOpacity>
       )}
-
-      <MonumentDetailSheet
-        monument={selected}
-        onClose={() => setSelected(null)}
-        onCreateRoute={handleCreateRoute}
-        onMoreInfo={(monument) => navigation.navigate('MonumentInfo', { monument })}
-      />
 
       <SavedSheet
         visible={savedOpen}
@@ -591,7 +642,6 @@ export default function OpenScreen({ navigation }: any) {
         onRouteChange={(reordered, start) => {
           setRouteMonuments(reordered)
           setCurrentStart(start)
-          // If start type switched to address, kick off geocoding
           if (start.type === 'address') handleAddressStartChange(start.address ?? '')
           else setStartAddressCoords(null)
         }}
@@ -613,10 +663,19 @@ export default function OpenScreen({ navigation }: any) {
         onFilterChange={setFilteredMonumentIds}
       />
     </View>
-  )
+
+    <MonumentDetailSheet
+      monument={selected}
+      onClose={() => setSelected(null)}
+      onCreateRoute={handleCreateRoute}
+      onMoreInfo={(monument) => {
+        setSelected(null)
+        navigation.navigate('MonumentInfo', { monument })
+      }}
+    />
+  </Fragment>
+)
 }
-
-
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -633,7 +692,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  avatar: { backgroundColor: '#6E3606', marginRight: 8, width: 45, height: 45 },
+  avatar: { marginRight: 8, width: 45, height: 45 },
   searchBarWrapper: {
     flex: 1, flexDirection: 'row', alignItems: 'center',
     backgroundColor: 'white', borderRadius: 25,
@@ -676,7 +735,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     marginLeft: 8,
   },
-  monumentBadgeText: { fontSize: 10, color: '#6E3606', fontWeight: '700' },
+  monumentBadgeText: { fontSize: 10, fontWeight: '700' },
   suggestionDivider: { height: 1, backgroundColor: '#F0F0F0', marginLeft: 40 },
 
   errorBox: {
@@ -687,7 +746,7 @@ const styles = StyleSheet.create({
   errorText: { color: 'white', textAlign: 'center', fontSize: 13 },
   bottomPanel: {
     position: 'absolute', bottom: 40, left: 16, right: 16,
-    backgroundColor: '#6E3606', borderRadius: 30,
+    borderRadius: 30,
     flexDirection: 'row', justifyContent: 'space-around',
     alignItems: 'center', paddingVertical: 14, zIndex: 1,
   },
@@ -696,7 +755,7 @@ const styles = StyleSheet.create({
   exitRouteBtn: {
     position: 'absolute', bottom: 40, left: 16, right: 16,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 6, backgroundColor: '#6E3606', borderRadius: 20,
+    gap: 6, borderRadius: 20,
     paddingVertical: 12, zIndex: 1,
   },
   exitRouteBtnText: { color: '#fff', fontWeight: '600', fontSize: 14 },
