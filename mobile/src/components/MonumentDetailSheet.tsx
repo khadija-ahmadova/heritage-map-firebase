@@ -61,7 +61,7 @@ export default function MonumentDetailSheet({ monument, onClose, onCreateRoute, 
 
   const handleShare = async () => {
   try {
-    const ref = await addDoc(collection(db, 'shares'), {
+    const ref = await addDoc(collection(db, 'shares_monument'), {
       monumentId: monument.id,
       createdAt: serverTimestamp(),
     })

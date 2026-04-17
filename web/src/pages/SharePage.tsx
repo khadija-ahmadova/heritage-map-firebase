@@ -15,7 +15,7 @@ export default function SharePage() {
     if (!shareId) return
     ;(async () => {
       try {
-        const shareSnap = await getDoc(doc(db, 'shares', shareId))
+        const shareSnap = await getDoc(doc(db, 'shares_monument', shareId))
         if (!shareSnap.exists()) { setError('Link not found.'); return }
         const { monumentId } = shareSnap.data()
 
