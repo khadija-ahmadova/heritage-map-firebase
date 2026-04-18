@@ -12,6 +12,7 @@ export interface Monument {
   description: string
   simplified_desc: string
   fun_fact?: string
+  imageUrl?: string[]
 }
 
 interface UseMonumentsResult {
@@ -44,7 +45,8 @@ export function useMonuments(): UseMonumentsResult {
             architect: data.architect ?? '',
             description: data.description ?? '',
             simplified_desc: data.simplified_desc ?? '',
-             fun_fact: data.fun_fact ?? '',
+            fun_fact: data.fun_fact ?? '',
+            imageUrl: Array.isArray(data.imageUrl) ? data.imageUrl : [],
           } satisfies Monument
         })
         setMonuments(docs)

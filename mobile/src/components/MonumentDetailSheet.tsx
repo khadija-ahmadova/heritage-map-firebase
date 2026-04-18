@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 import {
-  Animated, Dimensions, PanResponder, Platform,
+  Animated, Dimensions, Image, PanResponder, Platform,
   ScrollView, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
@@ -60,18 +60,18 @@ export default function MonumentDetailSheet({ monument, onClose, onCreateRoute, 
   }
 
   const handleShare = async () => {
-  try {
-    const ref = await addDoc(collection(db, 'shares_monument'), {
-      monumentId: monument.id,
-      createdAt: serverTimestamp(),
-    })
-    await Share.share({
-      message: `Check out ${monument.name}:\nhttps://yourapp.com/share/${ref.id}`,
-    })
-  } catch (e) {
-    console.error('Share failed', e)
+    try {
+      const ref = await addDoc(collection(db, 'shares_monument'), {
+        monumentId: monument.id,
+        createdAt: serverTimestamp(),
+      })
+      await Share.share({
+        message: `Check out ${monument.name}:\nhttps://yourapp.com/share/${ref.id}`,
+      })
+    } catch (e) {
+      console.error('Share failed', e)
+    }
   }
-}
 
   const previewText = [
     monument.period ? `Period: ${monument.period}` : null,
@@ -81,6 +81,8 @@ export default function MonumentDetailSheet({ monument, onClose, onCreateRoute, 
       ? monument.description.split(/(?<=[.!?])\s+/).slice(0, 2).join(' ')
       : null,
   ].filter(Boolean).join('\n\n')
+
+  const images: string[] = monument.imageUrl ?? []
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
@@ -103,14 +105,37 @@ export default function MonumentDetailSheet({ monument, onClose, onCreateRoute, 
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.scrollContent}
         >
-          <View style={styles.imagePlaceholder} />
+          {/* Photo gallery */}
+          {images.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.imageScroll}
+              contentContainerStyle={styles.imageScrollContent}
+            >
+              {images.map((url, i) => (
+                <Image
+                  key={i}
+                  source={{ uri: url }}
+                  style={styles.image}
+                  resizeMode="cover"
+                />
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={styles.imagePlaceholder} />
+          )}
 
           <Text style={[styles.title, { color: colors.text }]}>{monument.name}</Text>
 
           <View style={styles.actionRow}>
             <View style={styles.actionButtonWrapper}>
               <TouchableOpacity
-                style={[styles.actionButton, { backgroundColor: saved ? colors.accentSecondary : colors.accentSecondary }, saved && styles.actionButtonActive]}
+                style={[
+                  styles.actionButton,
+                  { backgroundColor: colors.accentSecondary },
+                  saved && styles.actionButtonActive,
+                ]}
                 onPress={handleSaveToggle}
               >
                 <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={22} color="#FFFFFF" />
@@ -119,7 +144,10 @@ export default function MonumentDetailSheet({ monument, onClose, onCreateRoute, 
             </View>
 
             <View style={styles.actionButtonWrapper}>
-              <TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.accentSecondary }]} onPress={handleShare}>
+              <TouchableOpacity
+                style={[styles.actionButton, { backgroundColor: colors.accentSecondary }]}
+                onPress={handleShare}
+              >
                 <Ionicons name="share-social-outline" size={22} color="#FFFFFF" />
               </TouchableOpacity>
               <Text style={[styles.actionLabel, { color: colors.subtext }]}>Share</Text>
@@ -161,6 +189,9 @@ const styles = StyleSheet.create({
   dragHandleArea: { alignItems: 'center', paddingVertical: 12 },
   dragHandle: { width: 40, height: 4, borderRadius: 2 },
   scrollContent: { paddingHorizontal: 16, paddingBottom: 24 },
+  imageScroll: { marginBottom: 14 },
+  imageScrollContent: { gap: 8 },
+  image: { height: 150, width: 220, borderRadius: 12 },
   imagePlaceholder: { height: 150, backgroundColor: '#3D2B1F', borderRadius: 12, marginBottom: 14 },
   title: { fontSize: 20, fontWeight: '700', marginBottom: 12 },
   actionRow: { flexDirection: 'row', gap: 25, marginBottom: 14 },
