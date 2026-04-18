@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '../context/ThemeContext'
 import type { Monument } from '../hooks/useMonuments'
@@ -12,6 +12,8 @@ export default function MonumentInfoScreen({ route, navigation }: any) {
   const simplifiedText = monument.simplified_desc ?? 'No description available.'
   const advancedText = monument.description ?? 'No description available.'
 
+  const images: string[] = monument.imageUrl ?? []
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { backgroundColor: colors.background }]}>
@@ -23,10 +25,29 @@ export default function MonumentInfoScreen({ route, navigation }: any) {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.imagesRow}>
-          <View style={styles.imagePlaceholder} />
-          <View style={styles.imagePlaceholder} />
-        </View>
+
+        {/* Photo gallery */}
+        {images.length > 0 ? (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.imageScrollContent}
+          >
+            {images.map((url, i) => (
+              <Image
+                key={i}
+                source={{ uri: url }}
+                style={styles.image}
+                resizeMode="cover"
+              />
+            ))}
+          </ScrollView>
+        ) : (
+          <View style={styles.imagesRow}>
+            <View style={styles.imagePlaceholder} />
+            <View style={styles.imagePlaceholder} />
+          </View>
+        )}
 
         <Text style={[styles.title, { color: colors.text }]}>{monument.name}</Text>
 
@@ -34,7 +55,7 @@ export default function MonumentInfoScreen({ route, navigation }: any) {
           <View style={[styles.metaBox, { backgroundColor: colors.card }]}>
             {monument.period && (
               <View style={styles.metaRow}>
-               <Ionicons name="time-outline" size={16} color={colors.accentSecondary} />
+                <Ionicons name="time-outline" size={16} color={colors.accentSecondary} />
                 <Text style={[styles.metaText, { color: colors.text }]}>{monument.period}</Text>
               </View>
             )}
@@ -90,6 +111,8 @@ const styles = StyleSheet.create({
   backBtn: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
   headerTitle: { fontSize: 17, fontWeight: '700' },
   content: { paddingHorizontal: 16, paddingBottom: 40, gap: 16 },
+  imageScrollContent: { gap: 10 },
+  image: { height: 130, width: 200, borderRadius: 12 },
   imagesRow: { flexDirection: 'row', gap: 10 },
   imagePlaceholder: { flex: 1, height: 130, backgroundColor: '#3D2B1F', borderRadius: 12 },
   title: { fontSize: 20, fontWeight: '700' },
