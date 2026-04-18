@@ -59,6 +59,8 @@ npm run dev          # dev server at http://localhost:5173
 npm run build        # production build → web/dist/
 npm run lint         # ESLint
 npm run preview      # preview the production build
+npm test             # run tests
+npm run test:coverage # run tests with coverage report
 ```
 
 ### Mobile
@@ -69,7 +71,7 @@ npm install --legacy-peer-deps
 npx expo start           # scan QR with Expo Go
 npx expo start --ios     # open iOS simulator
 npx expo start --android # open Android emulator
-npx jest --no-coverage   # run tests
+npx jest --no-coverage   # run all tests
 ```
 
 ## Features
@@ -123,11 +125,41 @@ seen_landmarks/{uid}_{monumentId}
 
 ## Testing
 
-Tests live in `mobile/__tests__/` and use Jest + jest-expo + React Native Testing Library v12.
+### Web
+
+Tests live in `web/src/__tests__/` and use **Vitest** + **React Testing Library**. Firebase is mocked with `vi.mock` — no real network calls are made.
+
+```bash
+cd web
+npm test                  # run all tests once
+npm run test:watch        # watch mode (re-runs on file save)
+npm run test:coverage     # run with coverage report
+```
+
+Coverage report is written to `web/coverage/` (gitignored). Open `web/coverage/index.html` in a browser to browse it visually.
+
+**What is tested:**
+
+| File | What it covers |
+|---|---|
+| `useDebounce` | Timing, rapid updates, cleanup |
+| `ProtectedRoute` | Loading state, unauthenticated redirect, role-based redirect |
+| `monumentsService` | `getMonuments`, `getMonumentById` (including not found) |
+| `filterService` | `getMonumentsByFilter`, `getUniqueFieldValues`, `searchMonuments` deduplication |
+| `contributionsService` | Submit, read pending/approved, update status, photos, monument submissions |
+| `Routeservice` | Route join, stop ordering, missing monument filtering |
+| `SearchBar` | Render, debounce, result display, selection, clear |
+| `cloudinary` | Upload success, POST method, upload failure |
+
+### Mobile
+
+Tests live in `mobile/__tests__/` and use **Jest** + **jest-expo** + **React Native Testing Library v12**.
 
 ```bash
 cd mobile
-npx jest --no-coverage
+npx jest --no-coverage          # run all tests
+npx jest --no-coverage <name>   # run a single test file by name
+npx jest --coverage             # run with coverage report
 ```
 
-Target coverage: >50%.
+Coverage report is written to `mobile/coverage/` (gitignored).
