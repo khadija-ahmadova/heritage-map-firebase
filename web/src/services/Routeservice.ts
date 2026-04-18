@@ -135,12 +135,17 @@ export async function getRouteByShareToken(token: string): Promise<ResolvedRoute
 export async function saveRoute(
   userId: string,
   stops: RouteStop[],
-  mode: TransportMode
+  mode: TransportMode,
+  title: string
 ): Promise<{ id: string; shareToken: string }> {
   const distanceKm  = computeDistance(stops);
   const durationMin = estimateDurationMin(distanceKm, mode);
   const shareToken  = generateShareToken();
-  const title       = stops.map((s) => s.monument.name).join(" → ");
+
+  const finalTitle =
+    title?.trim() ||
+    stops.map((s) => s.monument.name).join(" → "); // 🔴 CHANGED
+
 
   const landmarks: MobileLandmark[] = stops.map((s, i) => ({
     landmark_id: s.monument.id,
@@ -156,7 +161,7 @@ export async function saveRoute(
 
   const doc: MobileRouteDoc = {
     user_uid: userId,
-    title,
+    title: finalTitle,
     mode,
     distanceKm,
     durationMin,
@@ -178,12 +183,18 @@ export async function deleteRoute(routeId: string): Promise<void> {
 export async function updateRoute(
   routeId: string,
   stops: RouteStop[],
-  mode: TransportMode
+  mode: TransportMode,
+  title: string
 ): Promise<void> {
   const distanceKm = computeDistance(stops);
   const durationMin = estimateDurationMin(distanceKm, mode);
 
-  const landmarks = stops.map((s, i) => ({
+  const finalTitle =
+    title?.trim() ||
+    stops.map((s) => s.monument.name).join(" → "); // 🔴 CHANGED
+
+
+  const landmarks: MobileLandmark[] = stops.map((s, i) => ({
     landmark_id: s.monument.id,
     name: s.monument.name,
     architect: s.monument.architect ?? "",
@@ -197,6 +208,7 @@ export async function updateRoute(
 
   await updateDoc(doc(db, "routes", routeId), {
     landmarks,
+    title: finalTitle,
     mode,
     distanceKm,
     durationMin,

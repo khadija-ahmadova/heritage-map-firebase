@@ -13,12 +13,12 @@
  * Reads/writes RouteContext — must be inside <RouteProvider>.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../../context/useAuth";
 import { useRoute, TRANSPORT_OPTIONS } from "../../context/RouteContext";
 import type { TransportMode } from "../../context/RouteContext";
-import { saveRoute } from "../../services/Routeservice";
-import { updateRoute } from "../../services/Routeservice";
+import { saveRoute } from "../../services/routeService";
+import { updateRoute } from "../../services/routeService";
 // ─── Stop item ────────────────────────────────────────────────────────────────
 
 const StopItem = ({
@@ -61,7 +61,7 @@ const StopItem = ({
 const RouteBuilderPanel = () => {
   const { user } = useAuth();
   const {
-    stops, totalDistanceKm, clearRoute,
+    stops, totalDistanceKm, clearRoute, routeName, setRouteName,
     transportMode, setTransportMode,
     removeStop, moveStop, editingRouteId, setEditingRouteId
   } = useRoute();
@@ -76,6 +76,13 @@ const RouteBuilderPanel = () => {
   const shareUrl = shareToken
     ? `${window.location.origin}/tour/${shareToken}`
     : null;
+
+    // AUTO-GENERATE NAME (ONLY IF EMPTY)
+  useEffect(() => {
+    if (!routeName && stops.length > 0) {
+      setRouteName(stops.map((s) => s.monument.name).join(" → "));
+    }
+  }, [stops]);
 
   const handleCopy = async () => {
     if (!shareUrl) return;
@@ -92,11 +99,11 @@ const RouteBuilderPanel = () => {
     setSaveError(null);
     try {
       if(isEditing && editingRouteId){
-        await updateRoute(editingRouteId, stops, transportMode)
+        await updateRoute(editingRouteId, stops, transportMode, routeName ?? "")
 
         setShareToken(null);
       } else {
-        const result = await saveRoute(user.uid, stops, transportMode);
+        const result = await saveRoute(user.uid, stops, transportMode, routeName ?? "");
       setShareToken(result.shareToken);
       }
       
@@ -161,6 +168,17 @@ const RouteBuilderPanel = () => {
         </div>
       ) : (
         <>
+          {/* ROUTE TITLE INPUT */}
+          <div className="mb-4">
+            <p className="text-xs text-gray-400 mb-1">Route Title</p>
+            <input
+              value={routeName ?? ""}
+              onChange={(e) => setRouteName(e.target.value)}
+              placeholder="Enter route name..."
+              className="w-full px-3 py-2 border rounded"
+            />
+          </div>
+
           {/* Stop count + distance */}
           <p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
             Stops · {stops.length} · ~{totalDistanceKm} km

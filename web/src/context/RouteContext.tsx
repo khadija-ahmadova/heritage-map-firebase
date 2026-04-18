@@ -60,6 +60,8 @@ interface RouteContextValue {
   // shared
   stops: RouteStop[];
   routeName: string | null;
+  setRouteName: (name: string | null) => void;
+
   totalDistanceKm: number;
   // viewing / editing
   setRoute: (route: ResolvedRoute) => void;
@@ -97,6 +99,7 @@ export const RouteProvider = ({ children }: { children: ReactNode }) => {
   const clearRoute = useCallback(() => {
     setStops([]);
     setRouteName(null);
+    setEditingRouteId(null);
   }, []);
 
   // ── Building ──
@@ -132,7 +135,7 @@ export const RouteProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <RouteContext.Provider value={{
-      stops, routeName, totalDistanceKm,
+      stops, routeName, totalDistanceKm, setRouteName,
       setRoute, clearRoute,
       transportMode, setTransportMode,
       addStop, removeStop, moveStop, isInRoute, editingRouteId, setEditingRouteId

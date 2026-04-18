@@ -22,12 +22,11 @@ import markerIcon from "leaflet/dist/images/marker-icon.png";
 import "leaflet/dist/leaflet.css";
 import { useAuth } from "../context/useAuth";
 import { useRoute } from "../context/RouteContext";
-import { RouteProvider } from "../context/RouteContext";
-import { getSavedRoutesForUser } from "../services/Routeservice";
+import { getSavedRoutesForUser } from "../services/routeService";
 import type { ResolvedRoute, RouteStop } from "../types/Route";
 import RouteLine from "../components/map/RouteLine";
 import MonumentsPopup from "../components/map/MonumentsPopup";
-import { deleteRoute } from "../services/Routeservice";
+import { deleteRoute } from "../services/routeService";
 
 const DefaultIcon = L.icon({ iconUrl: markerIcon });
 L.Marker.prototype.options.icon = DefaultIcon;
@@ -164,7 +163,7 @@ const RouteMap = ({ stops }: { stops: RouteStop[] }) => (
     })}
 
     {/* Red polyline + numbered circles */}
-    {stop.length >= 2 && <RouteLine />}
+    {stops.length >= 2 && <RouteLine />}
   </MapContainer>
 );
 
@@ -180,7 +179,7 @@ function SavedRoutesInner() {
   setRoute(route);
 
   // Navigate into route-building mode
-  navigate("/search-by-architect?mode=route");
+  navigate(`/search-by-architect?mode=route&edit=${route.id}`);
 };
 
   const [savedRoutes, setSavedRoutes] = useState<ResolvedRoute[]>([]);
@@ -293,8 +292,6 @@ function SavedRoutesInner() {
 
 export default function SavedRoutesPage() {
   return (
-    <RouteProvider>
       <SavedRoutesInner />
-    </RouteProvider>
   );
 }

@@ -5,6 +5,9 @@ import LeftPanelHeader from "./LeftPanelHeader";
 import type { Monuments } from "../../types/Monuments";
 import type { FilterField } from "../../types/Filters";
 import RouteBuilderPanel from "../route/RouteBuilderPanel";
+import { getSavedRoutesForUser } from "../../services/routeService";
+import { useRoute } from "../../context/RouteContext";
+import { useAuth } from "../../context/useAuth";
 
 interface Props {
   children: (props: {
@@ -22,15 +25,26 @@ const SplitMapLayoutContent = ({ children, filteredField }: Props) => {
   const [buildingRoute, setBuildingRoute] = useState(false);
 
   const [searchParams] = useSearchParams();
-
+  const {setRoute} = useRoute();
+  const {user} = useAuth();
  
   useEffect(() => {
     const mode = searchParams.get("mode");
+    const editId = searchParams.get("edit");
     if (mode === "route") {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setBuildingRoute(true);
     }
-  }, [searchParams]);
+
+    if (editId && user) {
+    getSavedRoutesForUser(user.uid).then((routes) => {
+      const found = routes.find((r) => r.id === editId);
+      if (found) {
+        setRoute(found);
+      }
+    });
+  }
+  }, [searchParams, user, setRoute]);
 
   return (
     <div className="flex h-screen w-screen overflow-hidden">
