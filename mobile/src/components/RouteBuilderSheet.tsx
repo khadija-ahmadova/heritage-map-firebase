@@ -13,6 +13,9 @@ import { Ionicons } from '@expo/vector-icons'
 import type { Monument } from '../hooks/useMonuments'
 import type { TravelMode } from '../hooks/useRoute'
 import { useTheme } from '../context/ThemeContext'
+import { Share } from 'react-native'
+import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { db } from '../lib/firebase'
 
 
 
@@ -201,6 +204,26 @@ export default function RouteBuilderSheet({
     onSave(trimmed, route, selectedMode)
     setSaveModalVisible(false)
     setSaveName('')
+  }
+
+  const handleShare = async () => {
+  if (route.length === 0) return
+  try {
+    const ref = await addDoc(collection(db, 'shares_route'), {
+      monumentIds: route.map((m) => m.id),
+      travelMode: selectedMode,
+      createdAt: serverTimestamp(),
+    })
+
+    const webUrl = `https://yourapp.com/share/route/${ref.id}`
+    const deepLink = `heritageapp://share/route/${ref.id}`
+
+    await Share.share({
+      message: `Check out this heritage route:\n${deepLink}\n\nNo app? View in browser:\n${webUrl}`,
+    })
+  } catch (e) {
+    console.error('Share failed', e)
+  }
   }
 
   const formatDuration = (mins: number) => {
@@ -394,7 +417,7 @@ export default function RouteBuilderSheet({
           <TouchableOpacity style={styles.iconBtn} onPress={handleSave}>
             <Ionicons name="bookmark-outline" size={20} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconBtn}>
+          <TouchableOpacity style={styles.iconBtn} onPress={handleShare}>
             <Ionicons name="share-social-outline" size={20} color="#fff" />
           </TouchableOpacity>
           <TouchableOpacity 
