@@ -10,10 +10,23 @@ import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen'
 import { SavedProvider } from '../context/SavedContext'
 import MonumentInfoScreen from '../screens/MonumentInfoScreen'
 import { ThemeProvider } from '../context/ThemeContext'
-import * as Notifications from 'expo-notifications'  
-
+import * as Notifications from 'expo-notifications'
+import * as Linking from 'expo-linking'
 
 const Stack = createNativeStackNavigator()
+const prefix = Linking.createURL('/')
+
+
+const linking = {
+  prefixes: [prefix, 'heritageapp://'],
+  config: {
+    screens: {
+      Opening: {
+        path: 'share/route/:shareId',  // heritageapp://share/route/ABC123 → OpenScreen with shareId param
+      },
+    },
+  },
+}
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -26,14 +39,15 @@ Notifications.setNotificationHandler({
 })
 
 export default function AppNavigator() {
-  
   useEffect(() => {
     Notifications.requestPermissionsAsync()
   }, [])
+
   return (
     <ThemeProvider>
       <SavedProvider>
-        <NavigationContainer>
+        {/* CHANGE: pass linking object instead of inline config */}
+        <NavigationContainer linking={linking}>
           <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Signup" component={SignupScreen} />
@@ -44,6 +58,6 @@ export default function AppNavigator() {
           </Stack.Navigator>
         </NavigationContainer>
       </SavedProvider>
-   </ThemeProvider>
+    </ThemeProvider>
   )
 }
