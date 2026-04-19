@@ -63,6 +63,9 @@ describe('useMonuments', () => {
       period: '15th century',
       architect: 'Unknown',
       description: 'A palace complex in the walled city.',
+      simplified_desc: '',
+      fun_fact: '',
+      imageUrl: [],
     })
     expect(result.current.error).toBeNull()
   })
