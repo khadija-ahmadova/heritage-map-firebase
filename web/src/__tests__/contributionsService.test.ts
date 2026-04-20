@@ -23,7 +23,7 @@ vi.mock('firebase/firestore', () => ({
   where: vi.fn(),
   orderBy: vi.fn(),
   serverTimestamp: vi.fn(() => 'SERVER_TIMESTAMP'),
-  GeoPoint: class { constructor(public latitude: number, public longitude: number) {} },
+  GeoPoint: class { latitude: number; longitude: number; constructor(lat: number, lng: number) { this.latitude = lat; this.longitude = lng; } },
 }))
 
 vi.mock('../lib/firebase', () => ({ db: {} }))

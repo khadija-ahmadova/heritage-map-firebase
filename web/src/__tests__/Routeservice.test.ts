@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { getSavedRoutesForUser } from '../services/Routeservice'
+import { getSavedRoutesForUser } from '../services/routeService'
 
 vi.mock('firebase/firestore', () => ({
   collection: vi.fn(),
