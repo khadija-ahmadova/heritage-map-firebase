@@ -26,7 +26,7 @@ import { useAuth } from "../context/useAuth";
 import { signOut } from "../lib/auth";
 import { getMonumentById } from "../services/monumentsService";
 import type { Monuments } from "../types/Monuments";
-import dashboardHero from "../assets/images/Landing page hero.jpg";
+import dashboardHero from "../assets/images/landing-page-hero.jpg";
 
 
 

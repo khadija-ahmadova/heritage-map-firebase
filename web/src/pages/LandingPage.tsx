@@ -32,7 +32,7 @@
  * All map functionality is delegated to MapView.
  */
 
-import heroImage from "../assets/images/Landing page hero.jpg";
+import heroImage from "../assets/images/landing-page-hero.jpg";
 import architectImage from "../assets/images/Search-by-architect.png";
 import eraImage from "../assets/images/Search-by-period.jpg";
 import areaImage from "../assets/images/Search-by-area.jpg";
