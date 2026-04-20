@@ -13,7 +13,7 @@ import { signOut } from "../lib/auth";
 
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);
-  const { user, loading } = useAuth();
+  const { user, role, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -55,6 +55,9 @@ const Header = () => {
               // Logged-in state
               <>
                 <Link to="/dashboard" className={linkClass}>Dashboard</Link>
+                {role === "moderator" && (
+                  <Link to="/moderator" className={linkClass}>Moderation</Link>
+                )}
                 <Link
                   to="/search-by-architect?mode=route"
                   className={linkClass}
