@@ -66,7 +66,7 @@ export default function MonumentDetailSheet({ monument, onClose, onCreateRoute, 
         createdAt: serverTimestamp(),
       })
       await Share.share({
-        message: `Check out ${monument.name}:\nhttps://yourapp.com/share/${ref.id}`,
+        message: `Check out ${monument.name}:\n${process.env.EXPO_PUBLIC_WEB_URL}monument/${monument.id}`,
       })
     } catch (e) {
       console.error('Share failed', e)

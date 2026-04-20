@@ -100,8 +100,8 @@ function App() {
           <Route path="/search-by-architect" element={<SearchByArcitectPage />} />
           <Route path="/search-by-period" element={<SearchbyPeriodPage />} />
           <Route path="/search-by-style" element={<SearchByStylePage />} />
-          <Route path="/share/:shareId" element={<SharePage />} />
           <Route path="/share/route/:shareId" element={<ShareRoutePage />} />
+          <Route path="/share/:shareId" element={<SharePage />} />
         {/* Researcher contribution form */}
         <Route
           path="/contribute/:id"

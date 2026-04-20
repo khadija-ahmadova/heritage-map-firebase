@@ -215,7 +215,7 @@ export default function RouteBuilderSheet({
       createdAt: serverTimestamp(),
     })
 
-    const webUrl = `https://yourapp.com/share/route/${ref.id}`
+    const webUrl = `${process.env.EXPO_PUBLIC_WEB_URL}/share/route/${ref.id}`
     const deepLink = `heritageapp://share/route/${ref.id}`
 
     await Share.share({

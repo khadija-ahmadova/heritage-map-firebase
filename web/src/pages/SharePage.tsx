@@ -4,6 +4,8 @@ import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import ShareMapView from '../components/map/ShareMapView'
 
+console.log("PARAMS:", useParams())
+
 export default function SharePage() {
   const { shareId } = useParams<{ shareId: string }>()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -11,18 +13,28 @@ export default function SharePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  useEffect(() => {
+ useEffect(() => {
     if (!shareId) return
     ;(async () => {
       try {
+        console.log('shareId:', shareId)
+        
         const shareSnap = await getDoc(doc(db, 'shares_monument', shareId))
+        console.log('share exists:', shareSnap.exists())
+        console.log('share data:', shareSnap.data())
+        
         if (!shareSnap.exists()) { setError('Link not found.'); return }
         const { monumentId } = shareSnap.data()
+        console.log('monumentId:', monumentId)
 
         const monumentSnap = await getDoc(doc(db, 'monuments', monumentId))
+        console.log('monument exists:', monumentSnap.exists())
+        console.log('monument data:', monumentSnap.data())
+        
         if (!monumentSnap.exists()) { setError('Monument not found.'); return }
         setMonument({ id: monumentSnap.id, ...monumentSnap.data() })
-      } catch {
+      } catch (e) {
+        console.log('error:', e)
         setError('Failed to load.')
       } finally {
         setLoading(false)
