@@ -14,13 +14,13 @@ heritage-map-firebase-claude/
 └── mobile/     Expo ~54 + React Native 0.81.5 + TypeScript
 ```
 
-Both projects share the same Firebase project.
+Both projects share the same Firebase project. `apphosting.yaml` at the root configures the web app's Cloud Run deployment.
 
 ## Tech Stack
 
 | Layer | Technology |
 |---|---|
-| Web frontend | React 19 + Tailwind CSS v4 → Firebase Hosting |
+| Web frontend | React 19 + Tailwind CSS v4 → Firebase App Hosting |
 | Mobile | React Native / Expo ~54 (iOS & Android) |
 | Auth | Firebase Authentication (email/password) |
 | Database | Cloud Firestore |
@@ -61,6 +61,7 @@ npm run lint         # ESLint
 npm run preview      # preview the production build
 npm test             # run tests
 npm run test:coverage # run tests with coverage report
+npm start            # start the production Express server (used by Firebase App Hosting)
 ```
 
 ### Mobile
@@ -123,6 +124,8 @@ seen_landmarks/{uid}_{monumentId}
 
 **No Cloud Functions** — the project runs on the Firebase Spark (free) plan. Proximity queries use `geofire-common` geohash range queries with client-side haversine filtering. Route directions call the OpenRouteService REST API directly from the client.
 
+**Firebase App Hosting** runs the web app as a Node.js container on Cloud Run. Because Vite outputs only static files, `web/server.js` is a minimal Express server that serves `web/dist/` and falls back to `index.html` for all routes (required for React Router). `apphosting.yaml` at the repo root sets the entrypoint to `node server.js` and the runtime to `nodejs22`. The app itself remains a fully client-side SPA — `server.js` does no server-side rendering.
+
 ## Testing
 
 ### Web
@@ -147,7 +150,7 @@ Coverage report is written to `web/coverage/` (gitignored). Open `web/coverage/i
 | `monumentsService` | `getMonuments`, `getMonumentById` (including not found) |
 | `filterService` | `getMonumentsByFilter`, `getUniqueFieldValues`, `searchMonuments` deduplication |
 | `contributionsService` | Submit, read pending/approved, update status, photos, monument submissions |
-| `Routeservice` | Route join, stop ordering, missing monument filtering |
+| `routeService` | Route join, stop ordering, missing monument filtering |
 | `SearchBar` | Render, debounce, result display, selection, clear |
 | `cloudinary` | Upload success, POST method, upload failure |
 
