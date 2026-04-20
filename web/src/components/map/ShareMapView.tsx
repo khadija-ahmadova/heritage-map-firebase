@@ -15,11 +15,6 @@ interface Props {
   travelMode?: string
 }
 
-const MODE_COLORS: Record<string, string> = {
-  'foot-walking': '#4A90D9',
-  'driving-car': '#E8341C',
-  'cycling-regular': '#3DAE6E',
-}
 
 export default function ShareMapView({ coordinates, name, allMonuments, travelMode }: Props) {
   const containerRef = useRef<HTMLDivElement>(null)

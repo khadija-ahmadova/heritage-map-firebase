@@ -13,8 +13,7 @@ import { signOut } from "../lib/auth";
 
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { user, role, loading } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
