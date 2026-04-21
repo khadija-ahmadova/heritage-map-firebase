@@ -8,7 +8,7 @@ export interface RouteResult {
   durationMin: number
 }
 
-const ORS_API_KEY = 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjRhZjVlZTA2YzQ4YzRjYWU4ZTU3Y2EzZDUyODJkMWYwIiwiaCI6Im11cm11cjY0In0='
+const ORS_API_KEY = process.env.EXPO_PUBLIC_ORS_API_KEY
 
 export function useRoute() {
   const [routeResult, setRouteResult] = useState<RouteResult | null>(null)

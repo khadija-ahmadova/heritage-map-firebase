@@ -12,7 +12,7 @@ export default function MonumentInfoScreen({ route, navigation }: any) {
   const simplifiedText = monument.simplified_desc ?? 'No description available.'
   const advancedText = monument.description ?? 'No description available.'
 
-  const images: string[] = monument.imageUrl ?? []
+  const images: string[] = monument.photos ?? []
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
