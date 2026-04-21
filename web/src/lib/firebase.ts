@@ -3,11 +3,6 @@ import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 
-console.log("firebase.ts loaded");
-
-console.log(import.meta.env.VITE_FIREBASE_API_KEY);
-
-
 // These values come from your Firebase Console project settings.
 // Copy .env.example to .env and fill in the values before running.
 const firebaseConfig = {

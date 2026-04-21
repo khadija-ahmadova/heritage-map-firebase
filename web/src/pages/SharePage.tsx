@@ -4,8 +4,6 @@ import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import ShareMapView from '../components/map/ShareMapView'
 
-console.log("PARAMS:", useParams())
-
 export default function SharePage() {
   const { shareId } = useParams<{ shareId: string }>()
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
