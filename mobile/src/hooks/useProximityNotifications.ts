@@ -22,6 +22,7 @@ function haversineDistance(
 export function useProximityNotifications(
   userLocation: { latitude: number; longitude: number } | null,
   monuments: Monument[],
+
   enabled: boolean
 ) {
   // Tracks which monument IDs have already fired this session

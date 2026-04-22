@@ -43,9 +43,5 @@ export default {
     ],
     ['expo-notifications', {}],
   ],
-  extra: {
-    eas: {
-      projectId: 'your-project-id-here',
-    },
-  },
+
 }
