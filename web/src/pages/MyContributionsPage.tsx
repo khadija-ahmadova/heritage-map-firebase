@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react"
 import { Link } from "react-router-dom"
 import { useAuth } from "../context/useAuth"
-import { getMyMonumentSubmissions, getMyTextContributions } from "../services/contributionsService"
+import { getMyMonumentSubmissions, getMyTextContributions, getMyPhotoContributions } from "../services/contributionsService"
 import { getMonumentById } from "../services/monumentsService"
 import type { Monuments } from "../types/Monuments"
 import type { Contribution } from "../types/Contribution"
+import type { Photo } from "../types/Photo"
 
 type StatusKey = "pending" | "approved" | "rejected"
 
@@ -28,6 +29,7 @@ export default function MyContributionsPage() {
 
   const [submissions, setSubmissions] = useState<Monuments[]>([])
   const [textContribs, setTextContribs] = useState<Contribution[]>([])
+  const [photoContribs, setPhotoContribs] = useState<Photo[]>([])
   const [monumentNames, setMonumentNames] = useState<Map<string, string>>(new Map())
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -38,13 +40,20 @@ export default function MyContributionsPage() {
     Promise.all([
       getMyMonumentSubmissions(user.uid),
       getMyTextContributions(user.uid),
+      getMyPhotoContributions(user.uid),
     ])
-      .then(async ([subs, contribs]) => {
+      .then(async ([subs, contribs, photos]) => {
         setSubmissions(subs)
         setTextContribs(contribs)
+        setPhotoContribs(photos)
 
-        // Batch-fetch monument names for text contributions
-        const uniqueIds = [...new Set(contribs.map((c) => c.monument_id))]
+        // Batch-fetch monument names for text + photo contributions
+        const uniqueIds = [
+          ...new Set([
+            ...contribs.map((c) => c.monument_id),
+            ...photos.map((p) => p.monument_id).filter(Boolean) as string[],
+          ]),
+        ]
         const entries = await Promise.all(
           uniqueIds.map(async (id) => {
             const m = await getMonumentById(id)
@@ -142,7 +151,7 @@ export default function MyContributionsPage() {
             </section>
 
             {/* Section B — Text contributions */}
-            <section>
+            <section className="mb-8">
               <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
                 Text contributions
               </h2>
@@ -175,6 +184,50 @@ export default function MyContributionsPage() {
                       <p className="text-xs text-gray-400 mt-2">
                         {c.submitted_at?.toDate().toLocaleDateString() ?? ""}
                       </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {/* Section C — Photo contributions */}
+            <section>
+              <h2 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">
+                Photo contributions
+              </h2>
+
+              {photoContribs.length === 0 ? (
+                <div className="bg-white rounded-xl p-6 text-center shadow-sm">
+                  <p className="text-sm text-gray-400">No photo contributions yet.</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Visit any monument page to upload photos.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {photoContribs.map((p) => (
+                    <div key={p.id} className="bg-white rounded-xl p-5 shadow-sm flex gap-4 items-start">
+                      <img
+                        src={p.image_url || undefined}
+                        alt="Your contribution"
+                        className="w-20 h-20 object-cover rounded-lg flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          {p.monument_id && (
+                            <Link
+                              to={`/monument/${p.monument_id}`}
+                              className="text-xs font-semibold text-accent-bordeaux hover:underline uppercase tracking-wide truncate"
+                            >
+                              {monumentNames.get(p.monument_id) ?? p.monument_id}
+                            </Link>
+                          )}
+                          <StatusBadge status={p.status} />
+                        </div>
+                        <p className="text-xs text-gray-400">
+                          {p.uploaded_at?.toDate().toLocaleDateString() ?? ""}
+                        </p>
+                      </div>
                     </div>
                   ))}
                 </div>

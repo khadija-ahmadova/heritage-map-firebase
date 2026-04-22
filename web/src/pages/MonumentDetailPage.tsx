@@ -214,10 +214,10 @@ export default function MonumentDetailPage() {
         <div className="w-full overflow-hidden">
           {photos.length > 0 ? (
             <div className="flex gap-2 overflow-x-auto px-2 py-2">
-              {photos.map((photo) => (
+              {photos.filter((photo) => photo.image_url).map((photo) => (
                 <img
                   key={photo.id}
-                  src={photo.image_url}
+                  src={photo.image_url || undefined}
                   alt="Monument photo"
                   className="h-52 w-auto flex-shrink-0 object-cover rounded-lg"
                 />
@@ -230,22 +230,6 @@ export default function MonumentDetailPage() {
           )}
         </div>
 
-          {/* ── Images ── */}
-          {monument.imageUrl && monument.imageUrl.length > 0 && (
-            <div
-              className="flex gap-3 overflow-x-auto mb-10 -mx-6 px-6"
-              style={{ scrollbarWidth: 'none' }}
-            >
-              {monument.imageUrl.map((url, i) => (
-                <img
-                  key={i}
-                  src={url}
-                  alt={`${monument.name} ${i + 1}`}
-                  className="h-64 w-auto flex-shrink-0 rounded-xl object-cover"
-                />
-              ))}
-            </div>
-          )}
 
           {/* ── Article body ── */}
           <div className="bg-white rounded-2xl px-8 py-8">

@@ -6,13 +6,15 @@ import {
   getPendingMonumentSubmissions,
   updateMonumentSubmissionStatus,
   getMonumentPhotos,
+  getPendingPhotos,
+  updatePhotoStatus,
 } from "../services/contributionsService"
 import { getMonumentById } from "../services/monumentsService"
 import type { Contribution, ContributionStatus } from "../types/Contribution"
 import type { Monuments } from "../types/Monuments"
-import type { Photo } from "../types/Photo"
+import type { Photo, PhotoStatus } from "../types/Photo"
 
-type Tab = "contributions" | "monuments"
+type Tab = "contributions" | "monuments" | "photos"
 
 export default function ModeratorPage() {
   const [activeTab, setActiveTab] = useState<Tab>("contributions")
@@ -32,6 +34,14 @@ export default function ModeratorPage() {
   const [monumentPhotos, setMonumentPhotos] = useState<Map<string, Photo[]>>(new Map())
   const [monumentProcessingId, setMonumentProcessingId] = useState<string | null>(null)
   const [monumentActionError, setMonumentActionError] = useState<string | null>(null)
+
+  // ── Photos tab state ─────────────────────────────────────────────────────
+  const [pendingPhotos, setPendingPhotos] = useState<Photo[]>([])
+  const [photosLoading, setPhotosLoading] = useState(true)
+  const [photosError, setPhotosError] = useState<string | null>(null)
+  const [photoMonumentNames, setPhotoMonumentNames] = useState<Map<string, string>>(new Map())
+  const [photoProcessingId, setPhotoProcessingId] = useState<string | null>(null)
+  const [photoActionError, setPhotoActionError] = useState<string | null>(null)
 
   useEffect(() => {
     // Load contributions tab
@@ -66,6 +76,23 @@ export default function ModeratorPage() {
       })
       .catch(() => setMonumentsError("Failed to load new entries. Refresh to try again."))
       .finally(() => setMonumentsLoading(false))
+
+    // Load photos tab
+    setPhotosLoading(true)
+    getPendingPhotos()
+      .then(async (data) => {
+        setPendingPhotos(data)
+        const uniqueMonumentIds = [...new Set(data.map((p) => p.monument_id).filter(Boolean) as string[])]
+        const entries = await Promise.all(
+          uniqueMonumentIds.map(async (id) => {
+            const m = await getMonumentById(id)
+            return [id, m?.name ?? id] as [string, string]
+          })
+        )
+        setPhotoMonumentNames(new Map(entries))
+      })
+      .catch(() => setPhotosError("Failed to load pending photos. Refresh to try again."))
+      .finally(() => setPhotosLoading(false))
   }, [])
 
   async function handleContribDecision(contribution: Contribution, status: ContributionStatus) {
@@ -98,6 +125,21 @@ export default function ModeratorPage() {
     }
   }
 
+  async function handlePhotoDecision(photo: Photo, status: PhotoStatus) {
+    if (photoProcessingId) return
+    setPhotoActionError(null)
+    setPendingPhotos((prev) => prev.filter((p) => p.id !== photo.id))
+    setPhotoProcessingId(photo.id)
+    try {
+      await updatePhotoStatus(photo.monument_id!, photo.id, status)
+    } catch {
+      setPendingPhotos((prev) => [photo, ...prev])
+      setPhotoActionError("Action failed. Please try again.")
+    } finally {
+      setPhotoProcessingId(null)
+    }
+  }
+
   const tabBtn = (tab: Tab) =>
     `text-sm px-4 py-2 rounded-lg font-medium transition-colors ${
       activeTab === tab
@@ -126,6 +168,9 @@ export default function ModeratorPage() {
           </button>
           <button className={tabBtn("monuments")} onClick={() => setActiveTab("monuments")}>
             New Entries
+          </button>
+          <button className={tabBtn("photos")} onClick={() => setActiveTab("photos")}>
+            Photos
           </button>
         </div>
 
@@ -222,7 +267,7 @@ export default function ModeratorPage() {
                   {/* Photo thumbnail */}
                   {photos[0] && (
                     <img
-                      src={photos[0].image_url}
+                      src={photos[0].image_url || undefined}
                       alt={m.name}
                       className="w-full h-40 object-cover rounded-lg mb-4"
                     />
@@ -288,6 +333,76 @@ export default function ModeratorPage() {
                 </div>
               )
             })}
+          </>
+        )}
+
+        {/* ── Photos tab ────────────────────────────────────────────────── */}
+        {activeTab === "photos" && (
+          <>
+            {photoActionError && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-4">
+                {photoActionError}
+              </p>
+            )}
+            {photosLoading && <p className="text-sm text-gray-400">Loading…</p>}
+            {photosError && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                {photosError}
+              </p>
+            )}
+            {!photosLoading && !photosError && pendingPhotos.length === 0 && (
+              <div className="bg-white rounded-xl p-10 text-center shadow-sm">
+                <p className="text-gray-500 text-sm font-medium">No pending photos.</p>
+                <p className="text-gray-400 text-xs mt-1">All photos have been reviewed.</p>
+              </div>
+            )}
+            {pendingPhotos.map((photo) => (
+              <div key={photo.id} className="bg-white rounded-xl p-5 mb-3 shadow-sm">
+                <img
+                  src={photo.image_url || undefined}
+                  alt="Pending photo"
+                  className="w-full h-52 object-cover rounded-lg mb-4"
+                />
+                <div className="flex items-start justify-between gap-4 mb-3">
+                  <div>
+                    {photo.monument_id && (
+                      <Link
+                        to={`/monument/${photo.monument_id}`}
+                        className="text-xs font-semibold text-accent-bordeaux hover:underline uppercase tracking-wide"
+                      >
+                        {photoMonumentNames.get(photo.monument_id) ?? photo.monument_id}
+                      </Link>
+                    )}
+                    <div className="flex items-center gap-2 mt-0.5 text-xs text-gray-400">
+                      <span>By {photo.uploader_uid.slice(0, 8)}…</span>
+                      <span>·</span>
+                      <span>{photo.uploaded_at?.toDate().toLocaleDateString() ?? "Just now"}</span>
+                    </div>
+                  </div>
+                  <span className="flex-shrink-0 text-xs bg-bg-seashell text-accent-brown px-3 py-1 rounded-full">
+                    pending
+                  </span>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => handlePhotoDecision(photo, "rejected")}
+                    disabled={photoProcessingId === photo.id}
+                    className="text-sm px-4 py-1.5 rounded-lg border border-red-200 text-red-600
+                               hover:bg-red-50 disabled:opacity-50 transition-colors"
+                  >
+                    Reject
+                  </button>
+                  <button
+                    onClick={() => handlePhotoDecision(photo, "approved")}
+                    disabled={photoProcessingId === photo.id}
+                    className="text-sm px-4 py-1.5 rounded-lg bg-accent-bordeaux text-white
+                               hover:opacity-90 disabled:opacity-50 transition-opacity"
+                  >
+                    Approve
+                  </button>
+                </div>
+              </div>
+            ))}
           </>
         )}
 

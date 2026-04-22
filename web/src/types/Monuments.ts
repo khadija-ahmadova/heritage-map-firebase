@@ -46,7 +46,6 @@ export interface Monuments {
     period: string
     coordinates: GeoPoint
     description?: string
-    imageUrl?: string[]
     published?: boolean
     author_uid?: string
     submission_status?: "pending" | "approved" | "rejected"

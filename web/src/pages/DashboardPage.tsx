@@ -34,17 +34,9 @@ import dashboardHero from "../assets/images/landing-page-hero.jpg";
 
 const SavedMonumentCard = ({ monument }: { monument: Monuments }) => (
   <div className="flex-shrink-0 w-44 bg-white rounded-xl border border-gray-100 overflow-hidden">
-    {monument.imageUrl?.[0] ? (
-      <img
-        src={monument.imageUrl[0]}
-        alt={monument.name}
-        className="w-full h-28 object-cover"
-      />
-      ) : (
-      <div className="w-full h-28 bg-bg-seashell flex items-center justify-center">
-        {/* existing svg placeholder */}
-      </div>
-    )}
+    <div className="w-full h-28 bg-bg-seashell flex items-center justify-center">
+      {/* existing svg placeholder */}
+    </div>
     <div className="w-full h-28 bg-bg-seashell flex items-center justify-center">
       <svg
         className="w-8 h-8 text-gray-300"
@@ -230,6 +222,35 @@ export default function DashboardPage() {
                 </svg>
               }
             />
+          )}
+          {role === "researcher" && (
+            <>
+              <RouteButton
+                to="/my-contributions"
+                title="My contributions"
+                subtitle="Track your submissions"
+                icon={
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B2737" strokeWidth="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                  </svg>
+                }
+              />
+              <RouteButton
+                to="/submit-monument"
+                title="Submit entry"
+                subtitle="Add a new monument"
+                icon={
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B2737" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="16" />
+                    <line x1="8" y1="12" x2="16" y2="12" />
+                  </svg>
+                }
+              />
+            </>
           )}
           <RouteButton
             to="/saved-routes"
