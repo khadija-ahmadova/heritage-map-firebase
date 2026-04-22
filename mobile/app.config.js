@@ -43,5 +43,9 @@ export default {
     ],
     ['expo-notifications', {}],
   ],
-
+  "extra": {
+      "eas": {
+        "projectId": "b0df3700-6487-467c-b432-1c1d5fad8484",
+      },
+    },
 }
