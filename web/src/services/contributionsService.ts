@@ -14,7 +14,7 @@ import {
 import { db } from "../lib/firebase"
 import { uploadToCloudinary } from "../lib/cloudinary"
 import type { Contribution, ContributionStatus } from "../types/Contribution"
-import type { Photo } from "../types/Photo"
+import type { Photo, PhotoStatus } from "../types/Photo"
 import type { Monuments } from "../types/Monuments"
 
 export async function submitContribution(
@@ -40,9 +40,11 @@ export async function uploadMonumentPhoto(
   const imageUrl = await uploadToCloudinary(file)
   const colRef = collection(db, "monuments", monumentId, "photos")
   await addDoc(colRef, {
+    monument_id: monumentId,
     uploader_uid: uploaderUid,
     image_url: imageUrl,
     uploaded_at: serverTimestamp(),
+    status: "pending",
   })
   return imageUrl
 }
@@ -79,9 +81,11 @@ export async function submitNewMonument(
       imageFiles.map(async (file) => {
         const imageUrl = await uploadToCloudinary(file)
         await addDoc(collection(db, "monuments", docRef.id, "photos"), {
+          monument_id: docRef.id,
           uploader_uid: authorUid,
           image_url: imageUrl,
           uploaded_at: serverTimestamp(),
+          status: "pending",
         })
       })
     )
@@ -133,6 +137,7 @@ export async function getApprovedContributions(
 export async function getMonumentPhotos(monumentId: string): Promise<Photo[]> {
   const q = query(
     collection(db, "monuments", monumentId, "photos"),
+    where("status", "==", "approved"),
     orderBy("uploaded_at", "asc")
   )
   const snapshot = await getDocs(q)
@@ -140,6 +145,30 @@ export async function getMonumentPhotos(monumentId: string): Promise<Photo[]> {
     id: d.id,
     ...(d.data() as Omit<Photo, "id">),
   }))
+}
+
+// NOTE: Requires a Firestore Collection Group index.
+// Fields: status ASC + uploaded_at DESC, scope: Collection group.
+export async function getPendingPhotos(): Promise<Photo[]> {
+  const q = query(
+    collectionGroup(db, "photos"),
+    where("status", "==", "pending"),
+    orderBy("uploaded_at", "desc")
+  )
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map((d) => ({
+    id: d.id,
+    ...(d.data() as Omit<Photo, "id">),
+  }))
+}
+
+export async function updatePhotoStatus(
+  monumentId: string,
+  photoId: string,
+  status: PhotoStatus
+): Promise<void> {
+  const docRef = doc(db, "monuments", monumentId, "photos", photoId)
+  await updateDoc(docRef, { status })
 }
 
 // NOTE: Requires composite index on monuments: author_uid ASC + submitted_at DESC.
@@ -153,6 +182,20 @@ export async function getMyMonumentSubmissions(authorUid: string): Promise<Monum
   return snapshot.docs.map((d) => ({
     id: d.id,
     ...(d.data() as Omit<Monuments, "id">),
+  }))
+}
+
+// NOTE: Requires Collection Group index on photos: uploader_uid ASC + uploaded_at DESC.
+export async function getMyPhotoContributions(uploaderUid: string): Promise<Photo[]> {
+  const q = query(
+    collectionGroup(db, "photos"),
+    where("uploader_uid", "==", uploaderUid),
+    orderBy("uploaded_at", "desc")
+  )
+  const snapshot = await getDocs(q)
+  return snapshot.docs.map((d) => ({
+    id: d.id,
+    ...(d.data() as Omit<Photo, "id">),
   }))
 }
 
