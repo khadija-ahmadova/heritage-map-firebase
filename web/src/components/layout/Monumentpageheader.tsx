@@ -10,6 +10,8 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/useAuth";
 import { signOut } from "../../lib/auth";
+import logowhite from "../../assets/images/logo-white-version-with-text.svg"
+
 
 const MonumentPageHeader = () => {
   const { user, loading } = useAuth();
@@ -29,7 +31,11 @@ const MonumentPageHeader = () => {
 
         {/* Logo */}
         <Link to="/" className="font-bold text-xl text-white">
-          Heritage Maps
+          <img
+              src={logowhite}
+              alt="Heritage Maps"
+              className="h-14 w-auto"
+          />
         </Link>
 
         {/* Navigation */}

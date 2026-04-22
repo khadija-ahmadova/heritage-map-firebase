@@ -37,7 +37,7 @@ import SavedRoutesPage from './pages/SavedRoutesPage'
 import { RouteProvider } from './context/RouteContext'
 import SharePage from './pages/SharePage'
 import SearchPage from './pages/SearchPage'
-
+import TourPage from './pages/TourPage'
 
 // PublicOnlyRoute — the mirror of ProtectedRoute.
 // If the user is already logged in, redirect them away from /signin and /register
@@ -67,7 +67,8 @@ function App() {
 
           {/* Standalone pages */}
           <Route path="/monument/:id" element={<MonumentDetailPage />} />
-
+          
+          <Route path="/tour/:token" element={<TourPage />}/>
           <Route
             path="/saved-routes"
             element={

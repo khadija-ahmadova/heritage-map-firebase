@@ -180,6 +180,8 @@ function SavedRoutesInner() {
 
   // Navigate into route-building mode
   navigate(`/search-by-architect?mode=route&edit=${route.id}`);
+
+  
 };
 
   const [savedRoutes, setSavedRoutes] = useState<ResolvedRoute[]>([]);
@@ -223,6 +225,12 @@ function SavedRoutesInner() {
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, [user]);
+
+  useEffect(() => {
+  return () => {
+    clearRoute(); // cleanup when leaving page
+  };
+}, [clearRoute]);
 
   const handleToggle = (route: ResolvedRoute) => {
     if (openRouteId === route.id) {

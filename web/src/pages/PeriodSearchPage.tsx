@@ -48,7 +48,7 @@ const SearchbyPeriodPage = () => {
             <>
             
             <h2 className="text-2xl font-bold mb-4">
-                Periods
+                Period
             </h2>
 
             <div className="space-y-3">

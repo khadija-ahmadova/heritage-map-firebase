@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/useAuth";
 import { signOut } from "../lib/auth";
+import logowhite from "../assets/images/logo-white-version-with-text.svg"
 
 const Header = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -41,9 +42,13 @@ const Header = () => {
 
         {/* Logo */}
         <Link to="/" className="font-bold text-xl text-white">
-          Heritage Maps
+          <img
+              src={logowhite}
+              alt="Heritage Maps"
+              className="h-14 w-auto"
+          />
         </Link>
-
+        
         {/* Navigation */}
         <nav className="hidden md:flex items-center gap-8">
           <Link to="/" className={linkClass}>Home</Link>

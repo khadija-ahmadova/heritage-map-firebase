@@ -36,6 +36,7 @@ import heroImage from "../assets/images/landing-page-hero.jpg";
 import architectImage from "../assets/images/Search-by-architect.png";
 import eraImage from "../assets/images/Search-by-period.jpg";
 import areaImage from "../assets/images/Search-by-area.jpg";
+import aboutimg from "../assets/images/Landingpageabout.png";
 
 import { Link } from "react-router-dom";
 import Mapview from "../components/map/MapView";
@@ -77,7 +78,10 @@ const LandingPage = () => {
 
                         {/* Right Column (Image Placeholder) */}
                         <div className="flex-1">
-                            <div className="h-64 bg-gray-300 rounded-lg"></div>
+                            <img
+                                src={aboutimg}
+                                className="h-auto rounded-lg"
+                            />
                         </div>
 
                     </div>
@@ -125,7 +129,7 @@ const LandingPage = () => {
                                 className="absolute inset-0 w-full h-full object-cover"
                             />
                             {/* Dark Overlay*/}
-                            <div className="absolute insert-0 bg-black/10 group-hover:bg-black/50 transition"/>
+                            <div className="absolute insert-0 bg-black/80 group-hover:bg-black/50 transition"/>
 
                             {/* Text Label*/}
                             <div className="relative z-10 flex items-center justify-center h-full">
@@ -146,7 +150,7 @@ const LandingPage = () => {
                                 className="absolute inset-0 w-full h-full object-cover"
                             />
                             {/* Dark Overlay*/}
-                            <div className="absolute insert-0 bg-black/10 group-hover:bg-black/50 transition"/>
+                            <div className="absolute insert-0 bg-black/80 group-hover:bg-black/50 transition"/>
 
                             {/* Text Label*/}
                             <div className="relative z-10 flex items-center justify-center h-full">
