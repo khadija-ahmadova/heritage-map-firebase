@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import * as Notifications from 'expo-notifications'
 import type { Monument } from './useMonuments'
 
-const THRESHOLD_METERS = 80
+const THRESHOLD_METERS = 1500
 function haversineDistance(
   a: { latitude: number; longitude: number },
   b: { latitude: number; longitude: number }

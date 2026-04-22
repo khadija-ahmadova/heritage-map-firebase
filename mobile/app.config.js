@@ -5,23 +5,25 @@ export default {
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
-  userInterfaceStyle: 'light',
+  userInterfaceStyle: 'automatic',
   newArchEnabled: true,
   splash: {
-    image: './assets/splash-icon.png',
+    image: './assets/icon.png',
     resizeMode: 'contain',
     backgroundColor: '#ffffff',
   },
   ios: {
     supportsTablet: true,
+    bundleIdentifier: 'com.heritagemaps.app',
   },
   android: {
     adaptiveIcon: {
-      foregroundImage: './assets/adaptive-icon.png',
+      foregroundImage: './assets/icon.png',
       backgroundColor: '#ffffff',
     },
     edgeToEdgeEnabled: true,
     predictiveBackGestureEnabled: false,
+    package: 'com.heritagemaps.app',
     config: {
       googleMaps: {
         apiKey: process.env.GOOGLE_MAPS_ANDROID_API_KEY,
@@ -29,7 +31,7 @@ export default {
     },
   },
   web: {
-    favicon: './assets/favicon.png',
+    favicon: './assets/icon.png',
   },
   plugins: [
     [
@@ -41,4 +43,9 @@ export default {
     ],
     ['expo-notifications', {}],
   ],
+  extra: {
+    eas: {
+      projectId: 'your-project-id-here',
+    },
+  },
 }
