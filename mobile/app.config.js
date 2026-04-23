@@ -2,6 +2,7 @@
 export default {
   name: 'Heritage Maps',
   slug: 'heritage-maps',
+  scheme: 'heritagemaps',
   version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/icon.png',
